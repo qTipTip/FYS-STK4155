@@ -1,0 +1,165 @@
+\documentclass[article, a4paper, oneside, 12pt]{memoir}
+\linespread{1.25}
+\setlength{\parskip}{1em}
+\setlength{\parindent}{0em}
+
+\usepackage[]{mathtools}
+\usepackage[]{amssymb}
+\usepackage[]{libertine}
+\usepackage[]{libertinust1math}
+\usepackage[T1]{fontenc}
+\usepackage[]{microtype}
+\usepackage[]{geometry}
+\usepackage[]{amsthm}
+\usepackage[]{thmtools}
+\usepackage[usedvipsnames]{xcolor}
+\usepackage[]{bm}
+\usepackage[noabbrev, capitalize]{cleveref}
+\usepackage[]{amsmath}
+\usepackage[]{commath}
+
+
+\declaretheorem[style=remark, name=Remark,
+mdframed={
+}]{remark}
+
+\title{\textsc{Regression Techniques \\
+  FYS-STK4155 \\
+Assignment One}}
+\author{Ivar Haugal{\o}kken Stangeby}
+
+\newcommand{\x}{\bm{x}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\X}{\bm{X}}
+
+\newcommand{\mat}[1]{\bm{#1}}
+\newcommand{\y}{\bm{y}}
+\newcommand{\data}{\bm{\Omega}}
+\newcommand{\cost}{\mathcal{C}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\basis}{\mathcal{B}}
+\newcommand{\set}[1]{\left\{\, #1 \right\}}
+
+\begin{document}
+  \maketitle 
+
+  \chapter{Introduction}
+  
+  Regression analysis is the act of estimating relationships among variables.
+  In this project, we study various regression methods in more detail. In
+  particular, we compare the \emph{ordinary least squares} (OLS) method with
+  the \emph{Ridge regression} and \emph{Lasso regression} techniques. As we
+  shall see, these three methods are all variations over the same theme. We
+  start by testing the methods on noisy data sampled from a function known as
+  \emph{Franke's} bivariate test function, which has been in widespread use in
+  the evaluation of interpolation and data fitting techniques. Finally, we run
+  regression on real terrain data, comparing the aforementioned methods.
+
+  \chapter{Least Squares}
+
+  We start by giving an introduction to ordinary least square regression. This
+  method is perhaps the most widely used regression technique due to its
+  simplicity, both in its derivation, and its implementation. The goal of
+  regression analysis is to fit a \emph{model function} \( f(\x, \beta) \) to a
+  set of \( n \) data points \( \data = (\x_i, y_i)_{i=1}^n \). A simple example
+  is that of a linear polynomial with two parameters:
+  \begin{equation}
+    f(x, \beta) = \beta_0 + \beta_1 x.
+  \end{equation}
+  The \emph{model parameters} \( \beta \) are determined in order to minimize a
+  suitable \emph{cost function} \(\cost(\data, \beta)\) which measures to which
+  extent the model function manages to capture trends in the data \( \data \).
+
+  One common cost function is the one which involves the sum of squared
+  residuals (or squared errors):
+  \begin{equation}
+    \label{eq:mse}
+    \cost(\data, \beta) = \frac{1}{n}\sum_{i = 1}^n \varepsilon_i^2 \coloneqq \frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2
+  \end{equation}
+  where \( \hat{y}_i \coloneqq f(\x_i, \beta) \). The method involving the
+  minimization of this specific cost function is known as \emph{least squares}.
+
+  \begin{remark}
+    It is often assumed a priori that the data is infact generated from a noisy model, such that each \( y_i \) can be described 
+    as
+    \begin{equation}
+      y_i = f(\x_i) + \varepsilon_i
+    \end{equation}
+    where each \( \varepsilon_i \sim \N(0, \sigma^2) \) is normally distributed
+    with zero mean and variance \( \sigma^2 \). 
+  \end{remark}
+  
+  \section{General linear models.} We are often interested in finding the
+  best model function in a specific function space.  Assuming this space has a
+  basis \( \basis = \set{\varphi_i}_{i=1}^M\), we may write our model function
+  in terms of the basis functions and the model parameters as
+  \begin{equation}
+    \label{eq:gen_lin_mod}
+    f(\x, \beta) \coloneqq \sum_{i = 1}^M \beta_i\varphi_i(\x).
+  \end{equation}
+  With this formulation, we can represent the approximation \( \hat{\y} \) to
+  \( \y \) as a matrix product 
+  \begin{equation}
+    \hat{\y} = \X\beta
+  \end{equation}
+  where \( \X \) is the \emph{design matrix} defined by components \(\X_{ij} =
+  \varphi_j(\x_i)\), and \( \beta = [\beta_0, \ldots, \beta_M] \) is the model
+  parameters. With this notation in mind, we can also write the cost function
+  as
+  \begin{equation}
+    \cost(\data, \beta) = \frac{1}{n} (\y - \hat{\y})^T (\y - \hat{\y}).
+  \end{equation}
+
+  \paragraph{Optimizing the parameters of a general linear model.}
+  
+  Assume now that our model is of the form given in \cref{eq:gen_lin_mod} and
+  that our cost function is the mean squared error defined in \cref{eq:mse}. We
+  are interested in finding the parameters \( \beta \) that minimize the cost
+  function \( \cost(\data, \beta) \). Since \( \cost(\data, \beta) \) is
+  convex, it suffices to differentiate with respect to \( \beta \) and equating
+  to zero. 
+  
+  We have that
+  \begin{align}
+    \dpd{\cost(\data, \beta)}{\beta} = \X^T(\y - \X\beta), 
+  \end{align}
+  and equating this to zero yields the familiar \emph{normal equations}
+  \begin{equation}
+    \X^T \y = \X^T\X\beta.
+  \end{equation}
+  If the matrix \( \X^T\X \) is invertible, we may obtain the solution by
+  direct numerical matrix inversion. In this case, the optimal model parameters
+  are found directly by
+  \begin{equation}
+    \beta = (\X^T\X)^{-1}\X^T\y.
+  \end{equation}
+  However, these matrices may be ill-conditioned when the number of equations
+  are very large, and it is therefore common to apply approximate solvers for
+  the inverse, for instance using low-rank approximation based on
+  \textsc{SVD}-decomposition, which we will briefly turn to in the following.
+
+  \paragraph{Singular value decomposition.}
+  
+  Recall that any matrix \( \mat{A} \in \C^{n, m} \) can be decomposed as
+  \begin{equation}
+    \mat{A} = \mat{U} \mat{\Sigma}\mat{V}^T,
+  \end{equation}
+  where \( \mat{U} \) and \( \mat{V} \) comprised of the eigenvectors of \(
+  \mat{A}\mat{A}^T \) and \( \mat{A}^T\mat{A} \) respectively. As these
+  eigenvectors are orthonormal, it follows that both \( U \) and \( V \) are
+  unitary matrices. Furthermore, \( \mat{\Sigma} \) is a matrix 
+  \begin{equation}
+    \mat{\Sigma} = \begin{bmatrix}
+      \Sigma_1 & 0 \\
+       0 & 0
+    \end{bmatrix},
+  \end{equation}
+  where \( \Sigma_1 \) is a square diagonal matrix of size \( r \times r \)
+  with the non-zero singular values of \( \mat{A} \). The integer \( r \) is
+  the \emph{rank} of \( \mat{A} \). As the matrix \( \Sigma \) is mostly
+  containing zeros, the information stored in \( \mat{A} \) is attributed to
+  only some parts of \( \mat{U} \) and \( \mat{V} \). We can remove the
+  redundant parts, and more compactly express \( \mat{A} \) as \( \mat{A} =
+  \mat{U}_1 \mat{\Sigma}_1 \mat{V}_1^T \). Here, \( \mat{U}_1 \) is \( m \times
+  r \) and \( \mat{V}_1 \) is \( n \times r \).
+\end{document} 
