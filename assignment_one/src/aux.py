@@ -18,6 +18,36 @@ def franke_function(x, y):
     return a + b + c - d
 
 
+def mean_squared_error(y, y_hat):
+    """
+    Computes the mean squared error of the prediction y_hat to the ground truth y.
+
+    :param y: ground truth
+    :param y_hat: prediction
+    :return: mean squared error
+    """
+
+    n = y.shape[0]
+    return ((y - y_hat) ** 2).sum() / n
+
+
+def r2_score(y, y_hat):
+    """
+    Computes the r2-score (or coefficient of determination) of the prediction y_hat to the ground truth y.
+
+    :param y: ground truth
+    :param y_hat: prediction
+    :return: r2-score
+    """
+
+    y_mean = y.mean()
+
+    num = ((y - y_hat) ** 2).sum()
+    den = ((y - y_mean) ** 2).sum()
+
+    return 1 - num / den
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
