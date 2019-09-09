@@ -63,3 +63,29 @@ if __name__ == '__main__':
 
     axs.plot_surface(X, Y, Z)
     plt.show()
+
+
+def generate_data(N, noise=True, seed=None):
+    """
+    Samples (optionally noisy) data from the franke function with n parameter values in
+    each parameter direction.
+
+    :param N: number of values to sample in each parameter direction
+    :param noise: whether to sample with added noise or not
+    :param seed: optional seed for the RNG
+    :return: x-values, y-values and F(x,y)-values in raveled arrays.
+    """
+    if noise and seed is not None:
+        np.random.seed(seed)
+
+    x = np.linspace(0, 1, N)
+    y = np.linspace(0, 1, N)
+
+    X, Y = np.meshgrid(x, y)
+    Z = franke_function(X, Y).ravel()
+    params = np.dstack((X, Y)).reshape(-1, 2)
+
+    if noise:
+        Z += np.random.normal(0, 1 / N, size=Z.shape)
+
+    return params, Z
