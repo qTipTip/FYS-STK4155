@@ -4,7 +4,7 @@ from assignment_one.src import ordinary_least_squares as ols
 from assignment_one.src.aux import generate_data, mean_squared_error, r2_score
 
 
-def perform_franke_ols(params, z, polynomial_degree=5):
+def perform_regression(params, z, polynomial_degree=5, ridge=False, l=0.1):
     """
     Performs a polynomial fit to sampled data from the Franke function.
     :return: parameters beta, and sampled points from predicted surface.
@@ -12,7 +12,11 @@ def perform_franke_ols(params, z, polynomial_degree=5):
     """
     n = int(np.sqrt(z.shape[0]))
     v = ols.design_matrix_from_parameters(params, polynomial_degree=polynomial_degree)
-    beta = ols.ordinary_least_squares(v, z)
+
+    if ridge:
+        beta = ols.ridge_regression(v, z, l=l)
+    else:
+        beta = ols.ordinary_least_squares(v, z)
     z_hat = (v @ beta).reshape(n, n)
 
     return beta, z_hat
@@ -25,6 +29,8 @@ def compute_beta_variance(beta):
     :param beta:
     :return:
     """
+
+    pass
 
 
 if __name__ == '__main__':
@@ -41,7 +47,7 @@ if __name__ == '__main__':
     params, z, X, Y = generate_data(N, noise, seed, return_mesh=True)
 
     for d in tqdm.tqdm(poly_degs, disable=True):
-        beta, z_hat = perform_franke_ols(params, z, polynomial_degree=d)
+        beta, z_hat = perform_regression(params, z, polynomial_degree=d, ridge=True, l=0.1)
 
         z_hat = z_hat.reshape(N, N)
         z = z.reshape(N, N)

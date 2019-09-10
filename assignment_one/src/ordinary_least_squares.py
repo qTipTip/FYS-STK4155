@@ -36,6 +36,7 @@ def ordinary_least_squares(X, y, pseudo_inv=True):
     else:
         dot_inv = np.linalg.inv(dot)
 
+    print(dot_inv.shape, X.T.shape, y.shape)
     b = dot_inv.dot(X.T).dot(y)
     return b
 
@@ -51,9 +52,8 @@ def ridge_regression(X, y, l=0.1, pseudo_inv=True):
     :return: the parameters b minimizing the penalized mean squared error.
     """
 
-    n = X.shape[0]
+    n = X.shape[1]
     dot = X.T.dot(X) + l * np.eye(n)
-
     if y.ndim != 1:
         y = y.ravel()
 
@@ -62,6 +62,7 @@ def ridge_regression(X, y, l=0.1, pseudo_inv=True):
     else:
         dot_inv = np.linalg.inv(dot)
 
+    print(dot_inv.shape, X.T.shape, y.shape)
     b = dot_inv.dot(X.T).dot(y)
     return b
 
