@@ -1,7 +1,7 @@
 \documentclass[article, a4paper, oneside, 12pt]{memoir}
 \linespread{1.25}
-\setlength{\parskip}{1em}
-\setlength{\parindent}{0em}
+%\setlength{\parskip}{1em}
+%\setlength{\parindent}{0em}
 
 \usepackage[]{mathtools}
 \usepackage[]{amssymb}
@@ -14,16 +14,16 @@
 \usepackage[]{thmtools}
 \usepackage[usedvipsnames]{xcolor}
 \usepackage[]{bm}
-\usepackage[noabbrev, capitalize]{cleveref}
 \usepackage[]{amsmath}
 \usepackage[]{commath}
+\usepackage[noabbrev, capitalize]{cleveref}
 
 
 \declaretheorem[style=remark, name=Remark,
 mdframed={
 }]{remark}
 
-\title{\textsc{Regression Techniques \\
+\title{\textsc{Regression And Resampling Techniques \\
   FYS-STK4155 \\
 Assignment One}}
 \author{Ivar Haugal{\o}kken Stangeby}
@@ -31,6 +31,9 @@ Assignment One}}
 \newcommand{\x}{\bm{x}}
 \newcommand{\C}{\mathbb{C}}
 \newcommand{\X}{\bm{X}}
+\newcommand{\diag}[1]{\mathrm{diag}(#1)}
+\newcommand{\MSE}[1]{\mathrm{MSE}(#1)}
+\newcommand{\R}[1]{\mathrm{R}^2(#1)}
 
 \newcommand{\mat}[1]{\bm{#1}}
 \newcommand{\y}{\bm{y}}
@@ -55,21 +58,81 @@ Assignment One}}
   the evaluation of interpolation and data fitting techniques. Finally, we run
   regression on real terrain data, comparing the aforementioned methods.
 
-  \chapter{Least Squares}
+  \chapter{Regression Techniques}
 
-  We start by giving an introduction to ordinary least square regression. This
-  method is perhaps the most widely used regression technique due to its
-  simplicity, both in its derivation, and its implementation. The goal of
-  regression analysis is to fit a \emph{model function} \( f(\x, \beta) \) to a
-  set of \( n \) data points \( \data = (\x_i, y_i)_{i=1}^n \). A simple example
-  is that of a linear polynomial with two parameters:
+  In general, the goal of regression analysis is to fit a \emph{model function}
+  \( f(\x, \beta) \) to a set of \( n \) data points \( \data = (\x_i,
+  y_i)_{i=1}^n \). A simple example is that of a linear polynomial with two
+  parameters:
   \begin{equation}
     f(x, \beta) = \beta_0 + \beta_1 x.
   \end{equation}
   The \emph{model parameters} \( \beta \) are determined in order to minimize a
   suitable \emph{cost function} \(\cost(\data, \beta)\) which measures to which
   extent the model function manages to capture trends in the data \( \data \).
+  It is the choice of cost function \( \matcal{C}(\data, \beta)\) which
+  distinguishes  the three regression techniques, OLS, Lasso regression, and
+  Ridge regression.
 
+  \begin{remark}
+    It is often assumed a priori that the data is infact generated from a noisy
+    model, such that each \( y_i \) can be described as
+    \begin{equation}
+      y_i = f(\x_i) + \varepsilon_i
+    \end{equation}
+    where each \( \varepsilon_i \sim \N(0, \sigma^2) \) is normally distributed
+    with zero mean and variance \( \sigma^2 \). This assumption on the error
+    gives rise to what is known as \emph{general linear models}.
+  \end{remark}
+
+
+  \paragraph{The design matrix.} We are often interested in finding the best
+  model function in a specific function space.  Assuming this space has a basis
+  \( \basis = \set{\varphi_i}_{i=1}^M\), we may write our model function in
+  terms of the basis functions and the model parameters as
+  \begin{equation}
+    \label{eq:gen_lin_mod}
+    f(\x, \beta) \coloneqq \sum_{i = 1}^M \beta_i\varphi_i(\x).
+  \end{equation}
+  As an example, if we were to use the space \( \Pi_2^2 \) of bi-quadratic
+  polynomials, our basis functions would be
+  \begin{equation}
+    \basis = \set{1, x, x^2, y, y^2, xy}.
+  \end{equation}
+  With this formulation, we can represent the approximation \( \hat{\y} \) to
+  \( \y \) as a matrix product 
+  \begin{equation}
+    \label{eq:matrix_prod}
+    \hat{\y} = \X\beta
+  \end{equation}
+  where \( \X \) is the \emph{design matrix} defined by components \(\X_{ij} =
+  \varphi_j(\x_i)\), and \( \beta = [\beta_1, \ldots, \beta_M] \) is the model
+  parameters. 
+
+  \paragraph{Performance metrics.}
+  In order to evaluate the how accurately the model function \( f(\data, \beta)
+  \) captures trends in the target data \( \y \), a few standard performance
+  metrics are  used.  Firstly, the \emph{mean squared error}:
+  \begin{equation}
+    \MSE{\y, \hat{\y}} \coloneqq \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2
+  \end{equation}
+  which simply averages the squared error over all samples and estimates.
+  Secondly, we have the \emph{coefficient of determination} or
+  \emph{\(R^2\)-score}:
+  \begin{equation}
+    \R{\y, \hat{y}} \coloneqq 1 - \frac{\sum_{i=1}^n (y_i -
+    \hat{y}_i)^2}{\sum_{i=1}^n (y_i - \overline{y})^2}.
+  \end{equation}
+  The \(R^2\)-score measures much of the variation in \( \y \) which can be
+  attributed to a simple linear relation between \( \x \) and \( \y \). It is a
+  ratio, thus a value of one tells us that all the variation in the data can be
+  attributed to an approximate linear relationship between the data \(\x\) and
+  the response variable \( \y \). A value of zero indicates that a non-linear
+  model may be preferrable.
+  
+
+  \section{Ordinary Least Squares}
+  
   One common cost function is the one which involves the sum of squared
   residuals (or squared errors):
   \begin{equation}
@@ -78,39 +141,15 @@ Assignment One}}
   \end{equation}
   where \( \hat{y}_i \coloneqq f(\x_i, \beta) \). The method involving the
   minimization of this specific cost function is known as \emph{least squares}.
-
-  \begin{remark}
-    It is often assumed a priori that the data is infact generated from a noisy model, such that each \( y_i \) can be described 
-    as
-    \begin{equation}
-      y_i = f(\x_i) + \varepsilon_i
-    \end{equation}
-    where each \( \varepsilon_i \sim \N(0, \sigma^2) \) is normally distributed
-    with zero mean and variance \( \sigma^2 \). 
-  \end{remark}
-  
-  \section{General linear models.} We are often interested in finding the
-  best model function in a specific function space.  Assuming this space has a
-  basis \( \basis = \set{\varphi_i}_{i=1}^M\), we may write our model function
-  in terms of the basis functions and the model parameters as
-  \begin{equation}
-    \label{eq:gen_lin_mod}
-    f(\x, \beta) \coloneqq \sum_{i = 1}^M \beta_i\varphi_i(\x).
-  \end{equation}
-  With this formulation, we can represent the approximation \( \hat{\y} \) to
-  \( \y \) as a matrix product 
-  \begin{equation}
-    \hat{\y} = \X\beta
-  \end{equation}
-  where \( \X \) is the \emph{design matrix} defined by components \(\X_{ij} =
-  \varphi_j(\x_i)\), and \( \beta = [\beta_0, \ldots, \beta_M] \) is the model
-  parameters. With this notation in mind, we can also write the cost function
-  as
+  With the matrix notation from above in mind, we can also write the cost
+  function as
   \begin{equation}
     \cost(\data, \beta) = \frac{1}{n} (\y - \hat{\y})^T (\y - \hat{\y}).
   \end{equation}
 
-  \paragraph{Optimizing the parameters of a general linear model.}
+  
+
+  \paragraph{Optimizing the parameters in OLS.}
   
   Assume now that our model is of the form given in \cref{eq:gen_lin_mod} and
   that our cost function is the mean squared error defined in \cref{eq:mse}. We
@@ -131,6 +170,7 @@ Assignment One}}
   direct numerical matrix inversion. In this case, the optimal model parameters
   are found directly by
   \begin{equation}
+    \label{eq:optimal}
     \beta = (\X^T\X)^{-1}\X^T\y.
   \end{equation}
   However, these matrices may be ill-conditioned when the number of equations
@@ -144,10 +184,10 @@ Assignment One}}
   \begin{equation}
     \mat{A} = \mat{U} \mat{\Sigma}\mat{V}^T,
   \end{equation}
-  where \( \mat{U} \) and \( \mat{V} \) comprised of the eigenvectors of \(
+  where \( \mat{U} \) and \( \mat{V} \) are comprised of the eigenvectors of \(
   \mat{A}\mat{A}^T \) and \( \mat{A}^T\mat{A} \) respectively. As these
-  eigenvectors are orthonormal, it follows that both \( U \) and \( V \) are
-  unitary matrices. Furthermore, \( \mat{\Sigma} \) is a matrix 
+  eigenvectors are orthonormal, it follows that both \( \mat{U} \) and \(
+  \mat{V} \) are unitary matrices. Furthermore, \( \mat{\Sigma} \) is a matrix 
   \begin{equation}
     \mat{\Sigma} = \begin{bmatrix}
       \Sigma_1 & 0 \\
@@ -160,6 +200,34 @@ Assignment One}}
   containing zeros, the information stored in \( \mat{A} \) is attributed to
   only some parts of \( \mat{U} \) and \( \mat{V} \). We can remove the
   redundant parts, and more compactly express \( \mat{A} \) as \( \mat{A} =
-  \mat{U}_1 \mat{\Sigma}_1 \mat{V}_1^T \). Here, \( \mat{U}_1 \) is \( m \times
-  r \) and \( \mat{V}_1 \) is \( n \times r \).
+  \mat{U}_1 \mat{\Sigma}_1 \mat{V}_1^T \) without loss of accuracy in the
+  decomposition. Here, \( \mat{U}_1 \) is \( m \times r \) and \( \mat{V}_1 \)
+  is \( n \times r \).
+
+  Applying the singular value decomposition to the matrix \(\X = \mat{U}
+  \mat{\Sigma} \mat{V}^T\) we can analyze the expression for the prediction \( \hat{\y} \)
+  in terms of the matrix \( \X^T \X \).  First of all, we have that
+  \begin{align}
+    \begin{split}
+    \X^T \X &= \mat{V}\mat{\Sigma}^T\mat{U}^T\mat{U}\mat{\Sigma} \mat{V}^T\\
+            &= \mat{V}\mat{D}\mat{V}^T, 
+    \end{split}
+  \end{align}
+  where we have used that \( \mat{U}\mat{U}^T = \mat{I} \) and defined \(
+  \mat{D} = \diag{\sigma_1^2, \ldots, \sigma_n^2} \).  Thus, plugging this into
+  \cref{eq:optimal,eq:matrix_prod}, we obtain the expression
+  \begin{align}
+    \begin{split}
+      \hat{\y} = \X \beta = \X (\mat{V}\mat{D}\mat{V}^T)^{-1} \mat{X}^T \y.
+    \end{split}
+  \end{align}
+  Finally, substituting \( \X = \mat{U}\mat{\Sigma}\mat{V}^T \) and noting that
+  diagonal matrices always commute, we end up with
+  \begin{align}
+    \begin{split}
+      \hat{\y} = \mat{U}\mat{U}^T \mat{y}.
+    \end{split}
+  \end{align}
+
+
 \end{document} 
