@@ -48,24 +48,7 @@ def r2_score(y, y_hat):
     return 1 - num / den
 
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
-
-    x = np.linspace(0, 1, 50)
-    y = np.linspace(0, 1, 50)
-
-    X, Y = np.meshgrid(x, y)
-    Z = franke_function(X, Y)
-
-    fig = plt.figure()
-    axs = Axes3D(fig)
-
-    axs.plot_surface(X, Y, Z)
-    plt.show()
-
-
-def generate_data(N, noise=True, seed=None):
+def generate_data(N, noise=True, seed=None, return_mesh=False):
     """
     Samples (optionally noisy) data from the franke function with n parameter values in
     each parameter direction.
@@ -88,4 +71,24 @@ def generate_data(N, noise=True, seed=None):
     if noise:
         Z += np.random.normal(0, 1 / N, size=Z.shape)
 
-    return params, Z
+    if return_mesh:
+        return params, Z, X, Y
+    else:
+        return params, Z
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
+    x = np.linspace(0, 1, 50)
+    y = np.linspace(0, 1, 50)
+
+    X, Y = np.meshgrid(x, y)
+    Z = franke_function(X, Y)
+
+    fig = plt.figure()
+    axs = Axes3D(fig)
+
+    axs.plot_surface(X, Y, Z)
+    plt.show()

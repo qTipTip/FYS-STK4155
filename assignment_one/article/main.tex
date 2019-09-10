@@ -1,4 +1,4 @@
-\documentclass[article, a4paper, oneside, 12pt]{memoir}
+\documentclass[dvipsnames, article, a4paper, oneside, 12pt]{memoir}
 \linespread{1.25}
 %\setlength{\parskip}{1em}
 %\setlength{\parindent}{0em}
@@ -16,12 +16,17 @@
 \usepackage[]{bm}
 \usepackage[]{amsmath}
 \usepackage[]{commath}
+\usepackage[]{todonotes}
 \usepackage[noabbrev, capitalize]{cleveref}
-
+\usepackage[]{graphicx}
+\usepackage{titling}
 
 \declaretheorem[style=remark, name=Remark,
 mdframed={
 }]{remark}
+\declaretheorem[style=remark, name=Assumption,
+mdframed={
+}]{assumption}
 
 \title{\textsc{Regression And Resampling Techniques \\
   FYS-STK4155 \\
@@ -34,6 +39,9 @@ Assignment One}}
 \newcommand{\diag}[1]{\mathrm{diag}(#1)}
 \newcommand{\MSE}[1]{\mathrm{MSE}(#1)}
 \newcommand{\R}[1]{\mathrm{R}^2(#1)}
+\newcommand{\expect}{\mathbb{E}}
+\newcommand{\OLS}{\mathrm{OLS}}
+\newcommand{\ridge}{\mathrm{ridge}}
 
 \newcommand{\mat}[1]{\bm{#1}}
 \newcommand{\y}{\bm{y}}
@@ -41,22 +49,31 @@ Assignment One}}
 \newcommand{\cost}{\mathcal{C}}
 \newcommand{\N}{\mathcal{N}}
 \newcommand{\basis}{\mathcal{B}}
-\newcommand{\set}[1]{\left\{\, #1 \right\}}
+%\newcommand{\set}[1]{\left\{\, #1 \right\}}
+
+\pretitle{%
+  \begin{center}
+    \includegraphics[scale=0.7]{images/franke_shadow.pdf}\\[\bigskipamount]
+}
+\posttitle{\end{center}}
 
 \begin{document}
   \maketitle 
+  
+  \tableofcontents
 
   \chapter{Introduction}
-  
+   
   Regression analysis is the act of estimating relationships among variables.
   In this project, we study various regression methods in more detail. In
   particular, we compare the \emph{ordinary least squares} (OLS) method with
   the \emph{Ridge regression} and \emph{Lasso regression} techniques. As we
   shall see, these three methods are all variations over the same theme. We
   start by testing the methods on noisy data sampled from a function known as
-  \emph{Franke's} bivariate test function, which has been in widespread use in
-  the evaluation of interpolation and data fitting techniques. Finally, we run
-  regression on real terrain data, comparing the aforementioned methods.
+  \emph{Franke's} bivariate test function (visualized on the title page), which
+  has been in widespread use in the evaluation of interpolation and data
+  fitting techniques. Finally, we run regression on real terrain data,
+  comparing the aforementioned methods.
 
   \chapter{Regression Techniques}
 
@@ -70,11 +87,12 @@ Assignment One}}
   The \emph{model parameters} \( \beta \) are determined in order to minimize a
   suitable \emph{cost function} \(\cost(\data, \beta)\) which measures to which
   extent the model function manages to capture trends in the data \( \data \).
-  It is the choice of cost function \( \matcal{C}(\data, \beta)\) which
+  It is the choice of cost function \( \mathcal{C}(\data, \beta)\) which
   distinguishes  the three regression techniques, OLS, Lasso regression, and
   Ridge regression.
 
-  \begin{remark}
+  \begin{assumption}
+    \label{as:general_linear}
     It is often assumed a priori that the data is infact generated from a noisy
     model, such that each \( y_i \) can be described as
     \begin{equation}
@@ -83,7 +101,7 @@ Assignment One}}
     where each \( \varepsilon_i \sim \N(0, \sigma^2) \) is normally distributed
     with zero mean and variance \( \sigma^2 \). This assumption on the error
     gives rise to what is known as \emph{general linear models}.
-  \end{remark}
+  \end{assumption}
 
 
   \paragraph{The design matrix.} We are often interested in finding the best
@@ -149,7 +167,7 @@ Assignment One}}
 
   
 
-  \paragraph{Optimizing the parameters in OLS.}
+  \subsection{Optimizing the parameters in OLS.}
   
   Assume now that our model is of the form given in \cref{eq:gen_lin_mod} and
   that our cost function is the mean squared error defined in \cref{eq:mse}. We
@@ -171,14 +189,14 @@ Assignment One}}
   are found directly by
   \begin{equation}
     \label{eq:optimal}
-    \beta = (\X^T\X)^{-1}\X^T\y.
+    \beta_{\OLS} = (\X^T\X)^{-1}\X^T\y.
   \end{equation}
   However, these matrices may be ill-conditioned when the number of equations
   are very large, and it is therefore common to apply approximate solvers for
   the inverse, for instance using low-rank approximation based on
   \textsc{SVD}-decomposition, which we will briefly turn to in the following.
 
-  \paragraph{Singular value decomposition.}
+  \subsection{Singular value decomposition.}
   
   Recall that any matrix \( \mat{A} \in \C^{n, m} \) can be decomposed as
   \begin{equation}
@@ -229,5 +247,86 @@ Assignment One}}
     \end{split}
   \end{align}
 
+  \subsection{The bias-variance tradeoff} 
+  
+  Since we are attempting to estimate a true distribution based on finite
+  samples, there are certain statistical properties it is worthwile discussing.
+  We follow the derivation in.  Recall \cref{as:general_linear} which states
+  that our true data is generated from a noisy model
+  \begin{equation}
+    y = f(\x) + \varepsilon
+  \end{equation}
+  with \( \varepsilon \sim \N(0, \sigma^2) \).  We select a finite sample from
+  the true data, which constitutes our finite data-set \( \data \).
+  Furthermore, we have a model function \( f(\data, \beta) \) which depends on
+  the selected data-set and the model parameters \( \beta \). Thus, our
+  cost-function \( \cost \) will depend on the specific sample taken from the
+  true distribution. It is of interest to examine the expected out-of-sample
+  error \( \expect_{\data, \varepsilon}[\cost(\data, \beta)] \) of the model
+  function over the sampled data set \( \data \) and the noise \( \varepsilon
+  \). This can be decomposed into three distinct parts,
+  \emph{\textcolor{Maroon}{variance}}, \emph{\textcolor{Blue}{bias}}, and
+  \emph{\textcolor{Green}{noise}}:
+  \begin{equation}
+    \expect_{\data, \varepsilon}[\cost(\data, \beta)] = \frac{1}{n} \textcolor{Blue}{\sum_{i=1}^n \left(f(\x_i) - \expect_{\data}\left[\hat{y}_i\right]\right)^2}  + \frac{1}{n}\textcolor{Maroon}{\sum_{i=1}^n \expect_{\data}\big[\left(\hat{y}_i - \expect_{\data} [\hat{y}_i]\right)^2\big]} + \textcolor{Green} \sigma^2.
+  \end{equation}
+  See \cref{ap:derivation} for the full derivation. The bias-term measures the
+  deviation of the expectation of the model function \(f(\data, \beta)\) from
+  the true value \( f \), while the variance-term measures the fluctuations
+  arising due to using finite samples.
 
+  \section{Ridge Regression}
+  
+  When the dimensionality of the matrix \( \X \) is high, the problem of
+  near-collinear columns often arise, as mentioned earlier. Thus, the model
+  parameters \( \beta_{\OLS} \) of the ordinary least squares regression cannot
+  be determined. The propsed fix to this problem is to slightly perturb the
+  matrix \( \X^T \X \) by adding small positive values along the diagonal to
+  ensure its invertability. This is known as \emph{ridge regression} and yields
+  a model parameter estimator
+  \begin{equation}
+    \beta_{\ridge}(\lambda) = (\X^T\X + \lambda\mat{I})^{-1}\X^T\y
+  \end{equation}
+  where \( \lambda \geq 0 \) is a hyper parameter. To see why the resulting
+  modified matrix is invertible, one has to look at the singular values.  It
+  turns out that the model parameters \( \beta_{\ridge}(\lambda) \) directly
+  minimize the \emph{ridge loss function} defined as
+  \begin{equation}
+    \cost_{\ridge}(\data, \beta;  \lambda) \coloneqq \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2 + \lambda \sum_{i=1}^p \beta_i^2 = \cost(\data, \beta) + \lambda \beta^T \beta,
+  \end{equation}
+  which we recognize as standard penalized least squares.
+  
+  Ridge regregression carries several benefits. One of the more important is
+  its resilience to overfitting. In a high-dimensional setting, if many of the
+  data-features can be attributed to a few covariates, then the remaining
+  covariates do nothing more than fit to the noise. Large values of \( \beta_i
+  \) then a good indication that your model might be overfitting as some
+  covariates are given more weight than others.  The Ridge regression solves
+  this by directly penalizing large model parameters in the cost function.
+  
+  \appendix
+  \chapter{Derivation of the bias-variance-noise relationship}
+  \label{ap:derivation}
+  
+  \if 0
+  To this end --- by adding and subtracting \( f(\x_i) \) --- we have that 
+  \begin{align}
+    \begin{split}
+      \expect_{\data, \varepsilon} \big[\cost(\data, \beta)\big] &= \frac{1}{n}\expect_{\data, \varepsilon} \left[\sum_{i = 1}^n (y_i - \hat{y}_i)^2\right] \\
+                                                                 &= \frac{1}{n}\expect_{\data, \varepsilon} \left[\sum_{i=1}^n (y_i - f(\x_i) + f(\x_i) - \hat{y}_i)^2\right] \\
+                                                                 &= \frac{1}{n}\sum_{i=1}^n\left\{\overbrace{\expect_{\varepsilon} \left[(y_i - f(\x_i))^2\right]}^{= \sigma^2} + \expect_{\data}\left[(f(\x_i) - \hat{y}_i)^2\right] + 2\overbrace{\expect_{\varepsilon}\left[y_i - f(\x_i)\right]}^{= 0}\expect_{\data}\left[f(\x_i) - \hat{y}_i\right] \right\} \\ 
+                                                                 &= \frac{1}{n}\left\{n\sigma^2 + \expect_{\data} \left[(f(\x_i) - \hat{y}_i)^2\right]\right\} \\
+                                                                 &= \sigma^2 + \frac{1}{n}\sum_{i=1}^n\expect_{\data} \left[(f(\x_i) - \hat{y}_i)^2\right]\right\}.
+  \end{split}
+  \end{align}
+
+  Using the same trick of adding and subtracting, we may further decompose the second term as
+  \begin{align}
+    \begin{split}
+      \expect_{\data} \big[ (f(\x_i) - \hat{y}_i)^2\big] = \left(f(\x_i) - \expect_{\data}\big[\hat{y_i}\big]\right)^2 + \expect_{\data} \left[\left(\hat{y}_i - \expect_{\data}\left[\hat{y}_i\right]\right)^2\right]
+    \end{split}
+  \end{align}
+  \fi
+  Combining the two previous equations, we obtain
+  
 \end{document} 
