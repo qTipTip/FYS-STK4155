@@ -40,6 +40,32 @@ def ordinary_least_squares(X, y, pseudo_inv=True):
     return b
 
 
+def ridge_regression(X, y, l=0.1, pseudo_inv=True):
+    """
+    Solves the ridge regression problem by solving the equations X^T y = (X^T X + LI)b for b.
+
+    :param l: ridge hyper parameter
+    :param X: design matrix
+    :param y: ground truth / response variable
+    :param pseudo_inv: whether to use the svd-based inverse
+    :return: the parameters b minimizing the penalized mean squared error.
+    """
+
+    n = X.shape[0]
+    dot = X.T.dot(X) + l * np.eye(n)
+
+    if y.ndim != 1:
+        y = y.ravel()
+
+    if pseudo_inv:
+        dot_inv = svd_inv(dot)
+    else:
+        dot_inv = np.linalg.inv(dot)
+
+    b = dot_inv.dot(X.T).dot(y)
+    return b
+
+
 def svd_inv(A):
     """
     Returns the inverse of the matrix A based on a singular value decomposition of A.
