@@ -22,7 +22,7 @@
 \usepackage[]{FiraMono}
 \usepackage[]{FiraSans}
 
-\usepackage[backend=biber, style=authoryear]{biblatex}
+\usepackage[backend=biber, style=alphabetic, url=false, doi=false]{biblatex}
 \addbibresource{../../FYS-STK4155.bib}
 \usepackage[noabbrev, capitalize]{cleveref}
 
@@ -50,6 +50,7 @@ Assignment One}}
 \newcommand{\ridge}{\mathrm{ridge}}
 \newcommand{\lasso}{\mathrm{lasso}}
 \newcommand{\python}{\textsf{Python}{}}
+\newcommand{\sgn}{\,\mathrm{sign}{}}
 
 \newcommand{\mat}[1]{\bm{#1}}
 \newcommand{\y}{\bm{y}}
@@ -84,6 +85,7 @@ Assignment One}}
   comparing the aforementioned methods.
 
   \chapter{Regression Techniques}
+  \label{chp:regression}
 
   In general, the goal of regression analysis is to fit a \emph{model function}
   \( f(\x, \beta) \) to a set of \( n \) data points \( \data = (\x_i,
@@ -163,14 +165,14 @@ Assignment One}}
   residuals (or squared errors):
   \begin{equation}
     \label{eq:mse}
-    \cost(\data, \beta) = \frac{1}{n}\sum_{i = 1}^n \varepsilon_i^2 \coloneqq \frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2
+    \cost_\OLS(\data, \beta) = \frac{1}{n}\sum_{i = 1}^n \varepsilon_i^2 \coloneqq \frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2
   \end{equation}
   where \( \hat{y}_i \coloneqq f(\x_i, \beta) \). The method involving the
   minimization of this specific cost function is known as \emph{least squares}.
   With the matrix notation from above in mind, we can also write the cost
   function as
   \begin{equation}
-    \cost(\data, \beta) = \frac{1}{n} (\y - \hat{\y})^T (\y - \hat{\y}).
+    \cost_\OLS(\data, \beta) = \frac{1}{n} (\y - \hat{\y})^T (\y - \hat{\y}).
   \end{equation}
 
   
@@ -186,7 +188,7 @@ Assignment One}}
   
   We have that
   \begin{align}
-    \dpd{\cost(\data, \beta)}{\beta} = \X^T(\y - \X\beta), 
+    \dpd{\cost_\OLS(\data, \beta)}{\beta} = \X^T(\y - \X\beta), 
   \end{align}
   and equating this to zero yields the familiar \emph{normal equations}
   \begin{equation}
@@ -282,7 +284,23 @@ Assignment One}}
   See \cref{ap:derivation} for the full derivation. The bias-term measures the
   deviation of the expectation of the model function \(f(\data, \beta)\) from
   the true value \( f \), while the variance-term measures the fluctuations
-  arising due to using finite samples.
+  arising due to using different samples of the true data.
+  
+  Now, note that the equation above suggests that we should minimize both the
+  variance and the bias of the model, in order to obtain the smallest
+  generalization error of the model function. The variance term will be larger
+  for complex models, as performing a fit on one sampled data-set will not
+  neccessarily translate well to another sampled data-set. The bias term
+  measures errors introduced by making certain assumptions about the relations
+  between the covariates \( \X \) and the response \( \y \). In our case, we
+  are assuming a linear relationship (recall \emph{linear regression}), and
+  thus if the true underlying relation is non-linear, our bias will be high.
+  More complex models will in general have lower bias.
+
+  This is known as the \emph{bias-variance tradeoff} as having a highly complex
+  model, we reduce the bias, yet increase the variance.  Having a simple model
+  (for instance a linear model), we increase the bias, and reduce the variance.
+
 
   \section{Ridge Regression}
   
@@ -301,7 +319,9 @@ Assignment One}}
   turns out that the model parameters \( \beta_{\ridge}(\lambda) \) directly
   minimize the \emph{ridge loss function} defined as
   \begin{equation}
-    \cost_{\ridge}(\data, \beta;  \lambda) \coloneqq \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2 + \lambda \sum_{i=1}^p \beta_i^2 = \cost(\data, \beta) + \lambda \beta^T \beta,
+    \cost_{\ridge}(\data, \beta;  \lambda) \coloneqq \frac{1}{n} \sum_{i=1}^n
+    (y_i - \hat{y}_i)^2 + \lambda \sum_{i=1}^p \beta_i^2 = \cost(\data, \beta)
+    + \lambda \beta^T \beta,
   \end{equation}
   which we recognize as standard penalized least squares.
   
@@ -326,16 +346,73 @@ Assignment One}}
   penalization-term now involves absolute values of the model parameters. As
   the Lasso estimator may set model parameters to zero, it is effectively
   producing a sparser model. 
+
+  
+  Attempting to differentiate the Lasso cost function with respect to the model parameters, we see that
+  \begin{equation}
+    \dpd{\cost_\lasso(\data, \beta; \lambda)}{\beta_i} = \dpd{\cost_\OLS(\data, \beta)}{\beta_i} + \lambda \sgn(\beta_i).
+  \end{equation}
+  The analysis of the optimal Lasso parameters is made difficult due to the
+  discontinuity of the sign function, and no closed form solution as in OLS and
+  Ridge-regression can be found in the general case. Thus, numerical
+  optimzation techniques are often used, for instance gradient ascent/descent.
   
   For further information on Ridge and Lasso regression, the excellent article
   \citetitle{vanwieringenLectureNotesRidge2015} by
   \textcite{vanwieringenLectureNotesRidge2015} is highly recommended.
 
-  \chapter{Implementation}
+  \chapter{Implementation and methodology}
   
-  The implementations are all written in the programming language \python{} with
-  extensive use of the \python-packages \textsf{numpy} and \textsf{sklearn}.
- 
+  In order to verify the implementation, we test on sampled data from the
+  Franke function \cite{frankeCriticalComparisonMethods1979}. This bivariate
+  function \(F(x, y) \) is defined for \( x, y \in [0, 1] \) as follows:
+  \begin{align}
+    \begin{split}
+      F(x,y) \coloneqq &\frac{3}{4} \exp\left( -\frac{(9x - 2)^2}{4} - \frac{(9y - 2)^2}{4}\right) \\
+      + &\frac{3}{4}\exp\left( -\frac{(9x + 1)^2}{49} - \frac{(9 y + 1)^2}{10}\right) \\
+      + &\frac{1}{2}\exp\left(-\frac{(9x-7)^2}{4} - \frac{(9y-3)^2}{4}\right) \\
+      - &\frac{1}{5}\exp\left(-(9x - 4)^2 - (9y - 7)^2\right).
+    \end{split} 
+  \end{align}
+  We are interested in fitting a bivariate polynomial surface to this data, by
+  means of the regression techniques discussed in \cref{chp:regression}. That
+  is, our model function \( f(\data, \beta) \) lies in the polynomial space \(
+  \Pi_{2}^d \) of bi-degree \( (d, d) \) polynomials. We are mainly interested
+  in bi-quintic polynomial surfaces, and will therefore restrict our attention
+  to \( d = 5 \) in the numerical experiments.
+  
+  We sample the function \( F \) both with and without noise at \( N = 5000 \) points in each
+  parameter direction, yielding a matrix of function values
+  \begin{align}
+    \begin{split}
+      \mat{Z} &= \left[F(x_i, y_j) \right]_{ij}, \\
+      \mat{Z}^\star &= \left[F(x_i, y_j) + \varepsilon_{ij}\right]_{ij},
+    \end{split}
+  \end{align}
+  where each \( \varepsilon_{ij} \sim \N(0, \sigma^2) \). The design matrix \(
+  \mat{X} \) is computed using the \textsc{PolynomialFeatures}-method from the
+  \textsc{sklearn} package. The dimension of the bi-quintic polynomial space is
+  21, yielding a design matrix of size \( N^2 \times 21 \).
+
+  For the real data set, we use the supplied \textsc{Tiff} data of an area
+  close to Stavanger in Norway, as displayed in \cref{fig:terrain}. The
+  data-set consists of approximately \( 1800 \times 3600 \) data-points. 
+  \begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{images/terrain.pdf}
+    \caption{Real terrain data from a region close to Stavanger, Norway. For
+    the regression tasks, we select data from small rectangular regions to keep
+  the data-sizes manageable. The data is supplied in the file
+\texttt{SRTM\_data\_1\_Norway.tif}.}
+  \label{fig:terrain}
+  \end{figure}
+
+  The ordinary least squares and the Ridge regression is performed by solving
+  the corresponding normal equations. We use the Lasso regression available in
+  \textsc{sklearn} package.
+
+  
+
   \chapter{Numerical Results}
 
   \section{Toy Data}

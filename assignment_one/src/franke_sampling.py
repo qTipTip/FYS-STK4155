@@ -1,28 +1,11 @@
+import numpy as np
 from matplotlib import cm
 
-from assignment_one.src import ordinary_least_squares as ols
 from assignment_one.src.aux import generate_data, mean_squared_error, r2_score
+from assignment_one.src.ordinary_least_squares import perform_regression, svd_inv
 
 
-def perform_regression(params, z, polynomial_degree=5, ridge=False, l=0.1):
-    """
-    Performs a polynomial fit to sampled data from the Franke function.
-    :return: parameters beta, and sampled points from predicted surface.
-
-    """
-    n = int(np.sqrt(z.shape[0]))
-    v = ols.design_matrix_from_parameters(params, polynomial_degree=polynomial_degree)
-
-    if ridge:
-        beta = ols.ridge_regression(v, z, l=l)
-    else:
-        beta = ols.ordinary_least_squares(v, z)
-    z_hat = (v @ beta).reshape(n, n)
-
-    return beta, z_hat
-
-
-def compute_beta_variance(beta):
+def compute_beta_variance(noise_variance, design_matrix):
     """
     Computes the variance of the model parameters beta.
 
@@ -30,43 +13,59 @@ def compute_beta_variance(beta):
     :return:
     """
 
-    pass
+    return noise_variance * svd_inv(design_matrix.T.dot(design_matrix))
 
 
 if __name__ == '__main__':
 
     import tqdm
-    import numpy as np
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
+    from sklearn.model_selection import KFold
 
     poly_degs = range(6)
-    N = 50
+    N = 1500
     seed = 42
-    noise = True
+    noise = False
     params, z, X, Y = generate_data(N, noise, seed, return_mesh=True)
 
-    for d in tqdm.tqdm(poly_degs, disable=True):
-        beta, z_hat = perform_regression(params, z, polynomial_degree=d, ridge=True, l=0.1)
+    kf = KFold(n_splits=10)
+    for train_idx, test_idx in kf.split(X):
+        for d in tqdm.tqdm(poly_degs, disable=True):
+            X_train, X_test = X[train_idx], X[test_idx]
+            Y_train, Y_test = Y[train_idx], Y[test_idx]
+            z_train, z_test = z[train_idx], z[test_idx]
 
-        z_hat = z_hat.reshape(N, N)
-        z = z.reshape(N, N)
+            print(X_train)
+            beta, z_hat = perform_regression(X_train, Y_train, z_train, polynomial_degree=d, ridge=True, l=0.1)
 
-        fig = plt.figure()
-        ax1 = fig.add_subplot(111, projection='3d')
-        ax1.set_zlim3d(-0.2, 1.2)
+            M = X_train.shape[0]
+            z_hat = z_hat.reshape(M, M)
+            z_train = z_train.reshape(M, M)
 
-        ax1.plot_surface(X, Y, z_hat, alpha=0.5, cmap=cm.coolwarm)
-        ax1.scatter(X, Y, z, alpha=1, s=1, color='black')
+            fig = plt.figure()
+            ax1 = fig.add_subplot(211, projection='3d')
+            ax2 = fig.add_subplot(212, projection='3d')
 
-        plt.title(f'Polynomial degree $p = {d}$')
-        plt.show()
+            ax1.view_init(azim=30)
+            ax2.view_init(azim=30)
+            ax1.set_zlim3d(-0.2, 1.2)
 
-        z_hat = z_hat.ravel()
-        z = z.ravel()
+            ax1.plot_surface(X, Y, z_hat, alpha=0.5, cmap=cm.coolwarm)
+            # ax1.scatter(X, Y, z, alpha=1, s=1, color='black')
 
-        print('Polynomial degree = ', d)
-        print(f'\tMSE = {mean_squared_error(z, z_hat):.3f}')
-        print(f'\tR2  = {r2_score(z, z_hat):.3f}')
-        print(f'Predicted beta variance = {beta.var():.3f}')
-        print('===========================================')
+            ax2.plot_surface(X, Y, np.abs(z_hat - z), cmap=cm.coolwarm)
+            ax2.set_zlim3d(0, 1)
+
+            plt.title(f'Polynomial degree $p = {d}$')
+            plt.show()
+
+            z_hat = z_hat.ravel()
+            z = z.ravel()
+
+            print('Polynomial degree = ', d)
+            print(f'\tMSE = {mean_squared_error(z, z_hat):.3f}')
+            print(f'\tR2  = {r2_score(z, z_hat):.3f}')
+            print(f'Predicted beta variance = {beta.var():.3f}')
+            print(f'Computed beta variance  = {compute_beta_variance(1, X)}')
+            print('===========================================')

@@ -94,3 +94,24 @@ if __name__ == '__main__':
     X = design_matrix_from_parameters(x, y, polynomial_degree=1)
     X_ = svd_inv(X)
     b = ordinary_least_squares(X, y_, pseudo_inv=False)
+
+
+def perform_regression(x, y, z, polynomial_degree=5, ridge=False, l=0.1):
+    """
+    Performs a polynomial fit to sampled data.
+    :return: parameters beta, and sampled points from predicted surface.
+
+    """
+    N, M = x.shape[0], y.shape[1]
+    params = np.dstack((x, y)).reshape(-1, 2)
+    n = int(np.sqrt(z.shape[0]))
+    v = design_matrix_from_parameters(params, polynomial_degree=polynomial_degree)
+
+    if ridge:
+        beta = ridge_regression(v, z, l=l)
+    else:
+        beta = ordinary_least_squares(v, z)
+    print(v.shape, beta.shape)
+    z_hat = (v @ beta).reshape(N, M)
+
+    return beta, z_hat
