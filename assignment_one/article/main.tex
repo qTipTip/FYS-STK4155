@@ -1,7 +1,7 @@
 \documentclass[dvipsnames, article, a4paper, oneside, 12pt]{memoir}
 \linespread{1.25}
-%\setlength{\parskip}{1em}
-%\setlength{\parindent}{0em}
+\setlength{\parskip}{1em}
+\setlength{\parindent}{0em}
 
 \usepackage[]{mathtools}
 \usepackage[]{amssymb}
@@ -17,9 +17,15 @@
 \usepackage[]{amsmath}
 \usepackage[]{commath}
 \usepackage[]{todonotes}
-\usepackage[noabbrev, capitalize]{cleveref}
 \usepackage[]{graphicx}
 \usepackage{titling}
+\usepackage[]{FiraMono}
+\usepackage[]{FiraSans}
+
+\usepackage[backend=biber, style=authoryear]{biblatex}
+\addbibresource{../../FYS-STK4155.bib}
+\usepackage[noabbrev, capitalize]{cleveref}
+
 
 \declaretheorem[style=remark, name=Remark,
 mdframed={
@@ -42,6 +48,8 @@ Assignment One}}
 \newcommand{\expect}{\mathbb{E}}
 \newcommand{\OLS}{\mathrm{OLS}}
 \newcommand{\ridge}{\mathrm{ridge}}
+\newcommand{\lasso}{\mathrm{lasso}}
+\newcommand{\python}{\textsf{Python}{}}
 
 \newcommand{\mat}[1]{\bm{#1}}
 \newcommand{\y}{\bm{y}}
@@ -251,8 +259,9 @@ Assignment One}}
   
   Since we are attempting to estimate a true distribution based on finite
   samples, there are certain statistical properties it is worthwile discussing.
-  We follow the derivation in.  Recall \cref{as:general_linear} which states
-  that our true data is generated from a noisy model
+  We follow the derivation from \autocite{mehtaHighbiasLowvarianceIntroduction2019}.  Recall
+  \cref{as:general_linear} which states that our true data is generated from a
+  noisy model
   \begin{equation}
     y = f(\x) + \varepsilon
   \end{equation}
@@ -300,10 +309,40 @@ Assignment One}}
   its resilience to overfitting. In a high-dimensional setting, if many of the
   data-features can be attributed to a few covariates, then the remaining
   covariates do nothing more than fit to the noise. Large values of \( \beta_i
-  \) then a good indication that your model might be overfitting as some
+  \) is then a good indication that your model might be overfitting as some
   covariates are given more weight than others.  The Ridge regression solves
-  this by directly penalizing large model parameters in the cost function.
+  this by directly penalizing large model parameters in the cost function. 
   
+  \section{Lasso Regression}
+
+  One drawback of the OLS and Ridge regression approaches is that irrelevant
+  features may still be present in the model. Lasso regression fixes this by
+  --- in addition to penalizing large model parameters --- also setting
+  sufficiently small parameters to zero. The associated cost function reads
+  \begin{equation}
+    \cost_{\lasso}(\data, \beta; \lambda) \coloneqq \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2 + \lambda \sum_{i=1}^n |\beta_i|.
+  \end{equation}
+  Again, \( \lambda \leq 0 \) is a model hyper-parameter. Note that the
+  penalization-term now involves absolute values of the model parameters. As
+  the Lasso estimator may set model parameters to zero, it is effectively
+  producing a sparser model. 
+  
+  For further information on Ridge and Lasso regression, the excellent article
+  \citetitle{vanwieringenLectureNotesRidge2015} by
+  \textcite{vanwieringenLectureNotesRidge2015} is highly recommended.
+
+  \chapter{Implementation}
+  
+  The implementations are all written in the programming language \python{} with
+  extensive use of the \python-packages \textsf{numpy} and \textsf{sklearn}.
+ 
+  \chapter{Numerical Results}
+
+  \section{Toy Data}
+   
+  
+  \section{Terrain Data}
+
   \appendix
   \chapter{Derivation of the bias-variance-noise relationship}
   \label{ap:derivation}
@@ -328,5 +367,6 @@ Assignment One}}
   \end{align}
   \fi
   Combining the two previous equations, we obtain
-  
+ 
+\printbibliography
 \end{document} 
