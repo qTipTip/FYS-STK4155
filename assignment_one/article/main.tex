@@ -46,7 +46,10 @@ Assignment One}}
 \newcommand{\MSE}[1]{\mathrm{MSE}(#1)}
 \newcommand{\R}[1]{\mathrm{R}^2(#1)}
 \newcommand{\expect}{\mathbb{E}}
+\newcommand{\var}{\mathbb{V}}
+\newcommand{\cov}{\mathrm{Cov}}
 \newcommand{\OLS}{\mathrm{OLS}}
+\newcommand{\SD}{\mathrm{SD}}
 \newcommand{\ridge}{\mathrm{ridge}}
 \newcommand{\lasso}{\mathrm{lasso}}
 \newcommand{\python}{\textsf{Python}{}}
@@ -399,11 +402,11 @@ Assignment One}}
   data-set consists of approximately \( 1800 \times 3600 \) data-points. 
   \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{images/terrain.pdf}
+    \includegraphics[width=1\linewidth]{images/terrain.png}
     \caption{Real terrain data from a region close to Stavanger, Norway. For
     the regression tasks, we select data from small rectangular regions to keep
-  the data-sizes manageable. The data is supplied in the file
-\texttt{SRTM\_data\_1\_Norway.tif}.}
+    the data-sizes manageable. The data is supplied in the file
+    \texttt{SRTM\_data\_1\_Norway.tif}.}
   \label{fig:terrain}
   \end{figure}
 
@@ -411,7 +414,46 @@ Assignment One}}
   the corresponding normal equations. We use the Lasso regression available in
   \textsc{sklearn} package.
 
+  \section{Model statistics and resampling methods}
+ 	
+  We are interested in computing certain statistical quantities pertaining to
+  our data and corresponding model function. Firstly, the \emph{variance} of
+  the model parameters \( \beta \) over all possible data sets tells us how
+  sensitive \( \beta \) is to changes in the sampled data set. Using
+  \cref{eq:optimal} for the optimal OLS-parameters and setting \( \mat{A} =
+  (\X^T\X)^{-1}\X^T\), we compute:
+  \begin{align}
+	  \label{eq:ols_variance}
+	  \cov\left[\beta_{\OLS}\right] &= \cov\left[\mat{A}\y\right] = \mat{A} \cov\left[\y\right] \mat{A}^T = \mat{A}\mat{A}^T\sigma^2 = (\X^T{\X})^{-1} \sigma^2.
+  \end{align}
+  In this calculation, we have used \cref{as:general_linear} to deduce that \(
+  \cov[ \y ] = \diag{\sigma}\), a diagonal matrix, which commutes with other
+  matrices. It then follows that the estimated variance of \( \beta_{\OLS} \) is given by
+  \begin{equation}
+	  \var[\beta_{\OLS}] = [\sigma^2 (\X^T\X)^{-1}_{ii} ]_{i=1}^n.
+  \end{equation}
+  Furthermore, by direct computation, we see that \( \beta_{\OLS} \) is an \emph{unbiased} estimator,
+  as 
+  \begin{equation}
+	  \expect[\bias_{\OLS}] = \beta.
+  \end{equation}
+  With both the expected value and the variance of \( \beta \), we may
+  formulate a confidence interval for \( \beta \). Thus for an estimated
+  parameter \( \beta_i \) we construct the
+  \(95\%\)-confidence interval as
+  \begin{align}
+	  \begin{split}
+		  I_i &= (\expect[\beta_i] - 1.96 \times \SD[\beta_i], \expect[\beta_i] + 1.96 \times \SD[\beta_i]) \\
+		      &= \left(\beta_i - 1.96 \times \sigma \sqrt{(\X^T\X)^{-1}_{ii}}, \beta_i + 1.96 \times \sigma \sqrt{(\X^T\X)^{-1}_{ii}}\right).
+	  \end{split}
+  \end{align}
+  Here \( \SD[\beta_i] \) denotes the standard deviation of \( \beta_i \).  The
+  interpretation of this interval is  ``under repeated experiments, the number
+  of computed confidence intervals that actually include the true parameter,
+  will tend to \( 95\% \)''.
   
+
+
 
   \chapter{Numerical Results}
 
