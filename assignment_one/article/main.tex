@@ -19,6 +19,7 @@
 \usepackage[]{todonotes}
 \usepackage[]{graphicx}
 \usepackage{titling}
+\usepackage{mdframed}
 \usepackage[]{FiraMono}
 \usepackage[]{FiraSans}
 
@@ -34,7 +35,7 @@ mdframed={
 mdframed={
 }]{assumption}
 
-\title{\textsc{Regression And Resampling Techniques \\
+\title{\Large\textsc{Regression And Resampling Techniques \\
   FYS-STK4155 \\
 Assignment One}}
 \author{Ivar Haugal{\o}kken Stangeby}
@@ -71,7 +72,19 @@ Assignment One}}
 
 \begin{document}
   \maketitle 
-  
+  \clearpage
+ 	
+  \begin{abstract}
+	  In this project, we implement and compare three different variants of
+	  linear regression. Namely, ordinary least squares (OLS), Ridge
+	  regression, and Lasso regression. We test the methods on terrain data
+	  taken from a region near Stavanger, Norway. Initial implementation
+	  tests are done on an artificial data-set based on noisy samples of
+	  the Franke function. Statistical quantities pertaining to the various
+	  model functions are computed and compared. We also give an
+	  introduction to the theory and motivation behind the three methods.
+  \end{abstract}
+
   \tableofcontents
 
   \chapter{Introduction}
@@ -461,6 +474,33 @@ Assignment One}}
    
   
   \section{Terrain Data}
+	
+  \chapter{Conclusion}
+
+  
+  \section{Further work}
+
+  In this project we have discussed three different methods of linear
+  regression.  In all three cases, we have fitted polynomial surfaces to the
+  data sets. One draw-back with using polynomial surfaces is that they are
+  inherently global methods. Thus, in order to capture local trends in the
+  data, a very complex model is required, which (in the polynomial case) means
+  surfaces of higher polynomial degree. In recent years, several attempts at
+  constructing efficient local methods have been proposed. Spline-based
+  (piecewise polynomial) methods in particular have been important, and several
+  approaches to locally refined spline spaces have started to gain momentum.
+  We note in particular that of \emph{hierarchical B-splines} (HB),
+  \emph{truncated hierarchical B-splines} (THB) and \emph{locally refined
+  B-splines} (LRB). These methods allow us to place more degrees of freedom in regions of high
+  data-variance, thus locally increasing the model complexity. 
+
+  It would be interesting to make a comparison of the three methods in such a
+  simple setting as linear regression, as done in this project, taking into
+  account adaptive refinement of the spline spaces with respect to the sampled
+  data set.
+ 
+
+   
 
   \appendix
   \chapter{Derivation of the bias-variance-noise relationship}
