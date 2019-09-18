@@ -14,15 +14,31 @@ class Regression(object):
         raise NotImplementedError()
 
     def predict(self):
-        return self.X.dot(self.beta)
+        self.y_hat = self.X.dot(self.beta)
+        return self.y_hat
+
+    @property
+    def y_variance_estimate(self):
+        if not hasattr(self, 'y_hat'):
+            self.predict()
+        n, p = self.X.shape
+
+        return 1 / (n - p - 1) * np.sum((self.y - self.y_hat) ** 2)
 
     @property
     def beta(self):
         raise NotImplementedError()
 
+    @property
+    def beta_covariance_estimate(self):
+        return self.inv(self.xtx) * self.y_variance_estimate
+
+    @property
+    def beta_variance_estimate(self):
+        return np.diag(self.beta_covariance_estimate)
+
 
 class OLS(Regression):
-
     @property
     def beta(self):
         if hasattr(self, '_beta'):
@@ -72,10 +88,13 @@ if __name__ == '__main__':
     y = np.random.randint(0, 10, (10,))
 
     O = OLS(x, y)
-    R = Ridge(x, y, lmbd=0)
-    L = Lasso(x, y, lmbd=0)
+    R = Ridge(x, y, lmbd=0.1)
+    L = Lasso(x, y, lmbd=0.1)
     print(O.beta)
     print(R.beta)
     print(L.beta)
 
     print(O.predict())
+    for e in O, R, L:
+        print(e.y_variance_estimate)
+        print(e.beta_variance_estimate)
