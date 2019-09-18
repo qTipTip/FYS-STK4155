@@ -19,6 +19,13 @@ class Regression(object):
 
     @property
     def y_variance_estimate(self):
+        """
+        Return an unbiased estimate of the response variance (assuming all y_i are uncorrelated
+        and constant variance sigma^2).
+
+        :return: estimate of sigma^2
+        """
+
         if not hasattr(self, 'y_hat'):
             self.predict()
         n, p = self.X.shape
@@ -31,10 +38,21 @@ class Regression(object):
 
     @property
     def beta_covariance_estimate(self):
+        """
+        Returns the estimated covariance matrix for beta, which is a matrix of shape (n, n)
+
+        :return: covariance matrix estimate
+        """
         return self.inv(self.xtx) * self.y_variance_estimate
 
     @property
     def beta_variance_estimate(self):
+        """
+        Returns the estimated variances for beta, simply by extracting the diagonal from the covariance matrix.
+        This is an array of shape (n,)
+
+        :return: variance of beta
+        """
         return np.diag(self.beta_covariance_estimate)
 
 
