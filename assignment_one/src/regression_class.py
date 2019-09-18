@@ -55,6 +55,32 @@ class Regression(object):
         """
         return np.diag(self.beta_covariance_estimate)
 
+    def mse(self):
+        """
+        Computes the mean squared error of the prediction y_hat to the ground truth y.
+
+        :return: mean squared error
+        """
+
+        n = self.y.shape[0]
+        return ((self.y - self.y_hat) ** 2).sum() / n
+
+    def r2(self):
+        """
+        Computes the r2-score (or coefficient of determination) of the prediction y_hat to the ground truth y.
+
+        :param y: ground truth
+        :param y_hat: prediction
+        :return: r2-score
+        """
+
+        y_mean = self.y.mean()
+
+        num = ((self.y - self.y_hat) ** 2).sum()
+        den = ((self.y - y_mean) ** 2).sum()
+
+        return 1 - num / den
+
 
 class OLS(Regression):
     @property
@@ -102,12 +128,14 @@ class Lasso(Regression):
 
 
 if __name__ == '__main__':
-    x = np.random.randint(0, 10, (10, 6))
-    y = np.random.randint(0, 10, (10,))
+    x = np.linspace(0, 1, 10000)
+    X = np.ones((10000, 2))
+    X[:, 1] = x
+    y = 4*x**4 + np.random.normal(0, np.sqrt(9), 10000)
 
-    O = OLS(x, y)
-    R = Ridge(x, y, lmbd=0.1)
-    L = Lasso(x, y, lmbd=0.1)
+    O = OLS(X, y)
+    R = Ridge(X, y, lmbd=0.1)
+    L = Lasso(X, y, lmbd=0.1)
     print(O.beta)
     print(R.beta)
     print(L.beta)
@@ -116,3 +144,4 @@ if __name__ == '__main__':
     for e in O, R, L:
         print(e.y_variance_estimate)
         print(e.beta_variance_estimate)
+        print(e.r2(), e.mse())
