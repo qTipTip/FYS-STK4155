@@ -13,9 +13,18 @@ class Regression(object):
     def fit(self):
         raise NotImplementedError()
 
-    def predict(self):
-        self.y_hat = self.X.dot(self.beta)
-        return self.y_hat
+    def predict(self, X=None):
+        if X is None:
+            X = self.X
+        self._y_hat = X.dot(self.beta)
+        return self._y_hat
+
+    @property
+    def y_hat(self):
+        if not hasattr(self, '_y_hat'):
+            return self.predict()
+        else:
+            return self._y_hat
 
     @property
     def y_variance_estimate(self):
