@@ -131,7 +131,7 @@ if __name__ == '__main__':
     x = np.linspace(0, 1, 10000)
     X = np.ones((10000, 2))
     X[:, 1] = x
-    y = 4*x**4 + np.random.normal(0, np.sqrt(9), 10000)
+    y = 4 * x ** 4 + np.random.normal(0, np.sqrt(9), 10000)
 
     O = OLS(X, y)
     R = Ridge(X, y, lmbd=0.1)
