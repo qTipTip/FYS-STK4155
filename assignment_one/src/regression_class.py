@@ -81,6 +81,25 @@ class Regression(object):
 
         return 1 - num / den
 
+    @staticmethod
+    def svd_inv(A):
+        """
+        Returns the inverse of the matrix A based on a singular value decomposition of A.
+
+        :param A: matrix to invert
+        :return: inv(A)
+        """
+
+        u, sigma, v_transposed = np.linalg.svd(A)
+        m = u.shape[0]
+        n = v_transposed.shape[0]
+
+        D = np.zeros((m, n))
+        for i in range(n):
+            D[i, i] = sigma[i]
+
+        return v_transposed.T @ (np.linalg.pinv(D) @ u.T)
+
 
 class OLS(Regression):
     @property
