@@ -18,7 +18,7 @@ def franke_function(x, y):
     return a + b + c - d
 
 
-def mean_squared_error(y, y_hat):
+def mse(y, y_hat):
     """
     Computes the mean squared error of the prediction y_hat to the ground truth y.
 
@@ -31,7 +31,7 @@ def mean_squared_error(y, y_hat):
     return ((y - y_hat) ** 2).sum() / n
 
 
-def r2_score(y, y_hat):
+def r2(y, y_hat):
     """
     Computes the r2-score (or coefficient of determination) of the prediction y_hat to the ground truth y.
 

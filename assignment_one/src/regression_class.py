@@ -16,8 +16,10 @@ class Regression(object):
     def predict(self, X=None):
         if X is None:
             X = self.X
-        self._y_hat = X.dot(self.beta)
-        return self._y_hat
+        y_hat = X.dot(self.beta)
+        if X is None:
+            self._y_hat = y_hat
+        return y_hat
 
     @property
     def y_hat(self):

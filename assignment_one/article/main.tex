@@ -1,4 +1,5 @@
 \documentclass[dvipsnames, article, a4paper, oneside, 12pt]{memoir}
+\newsubfloat{figure}
 \linespread{1.25}
 \setlength{\parskip}{1em}
 \setlength{\parindent}{0em}
@@ -47,10 +48,10 @@ Assignment One}}
 \newcommand{\MSE}[1]{\mathrm{MSE}(#1)}
 \newcommand{\R}[1]{\mathrm{R}^2(#1)}
 \newcommand{\expect}{\mathbb{E}}
-\newcommand{\var}{\mathbb{V}}
-\newcommand{\cov}{\mathrm{Cov}}
+\DeclareMathOperator{\var}{Var}
+\DeclareMathOperator{\cov}{Cov}
 \newcommand{\OLS}{\mathrm{OLS}}
-\newcommand{\SD}{\mathrm{SD}}
+\DeclareMathOperator{\SD}{SD}
 \newcommand{\ridge}{\mathrm{ridge}}
 \newcommand{\lasso}{\mathrm{lasso}}
 \newcommand{\python}{\textsf{Python}{}}
@@ -402,13 +403,14 @@ Assignment One}}
   \begin{align}
     \begin{split}
       \mat{Z} &= \left[F(x_i, y_j) \right]_{ij}, \\
-      \mat{Z}^\star &= \left[F(x_i, y_j) + \varepsilon_{ij}\right]_{ij},
+      \mat{Z}^\star &= \left[F(x_i, y_j) + \alpha\varepsilon_{ij}\right]_{ij},
     \end{split}
   \end{align}
-  where each \( \varepsilon_{ij} \sim \N(0, \sigma^2) \). The design matrix \(
-  \mat{X} \) is computed using the \textsc{PolynomialFeatures}-method from the
-  \textsc{sklearn} package. The dimension of the bi-quintic polynomial space is
-  21, yielding a design matrix of size \( N^2 \times 21 \).
+  where each \( \varepsilon_{ij} \sim \N(0, \sigma^2) \) and \( \alpha \) is
+  the \emph{signal-to-noise ratio}. The design matrix \( \mat{X} \) is computed
+  using the \textsc{PolynomialFeatures}-method from the \textsc{sklearn}
+  package. The dimension of the bi-quintic polynomial space is 21, yielding a
+  design matrix of size \( N^2 \times 21 \).
 
   For the real data set, we use the supplied \textsc{Tiff} data of an area
   close to Stavanger in Norway, as displayed in \cref{fig:terrain}. The
@@ -448,7 +450,7 @@ Assignment One}}
   Furthermore, by direct computation, we see that \( \beta_{\OLS} \) is an \emph{unbiased} estimator,
   as 
   \begin{equation}
-	  \expect[\bias_{\OLS}] = \beta.
+	  \expect[\beta_{\OLS}] = \beta.
   \end{equation}
   With both the expected value and the variance of \( \beta \), we may
   formulate a confidence interval for \( \beta \). Thus for an estimated
@@ -470,9 +472,60 @@ Assignment One}}
 
   \chapter{Numerical Results}
 
-  \section{Toy Data}
-   
+  In this section we present some of the results of the numerical simulations.
+  We start simple by first considering the effects of model complexity --- in
+  terms of polynomial degree --- using OLS regression on the Franke dataset. We
+  assess the model accuracy by means of the mean squared error and the \(
+  R^2\)-score discussed previously. In order to increase the reliability of the
+  statistical estimates, we employ \( k\)-fold cross validation.
+
+  We then take a closer look at Ridge and Lasso regression techniques, and find
+  the optimal hyper-parameter \( \lambda \). Again, we use the Franke dataset.
+  In this context, we also see the effects of the bias-variance tradeoff.
+
+  Finally, we compare our methods on real world data, namely the terrain data
+  in \cref{fig:terrain}.
   
+  \section{Toy Data}
+  
+  \begin{figure}
+    \centering
+    \subbottom{%
+      \includegraphics[width=0.45\linewidth]{images/OLS_MSE_score.pdf}
+    }
+    \subbottom{%
+      \includegraphics[width=0.45\linewidth]{images/OLS_R2_score.pdf}
+    }
+    \caption{Ordinary least squares regression on samples from the Franke
+      function. The mean squared error (left) and the \(R^2\)-score (right) as
+      a function of the polynomial degree \( d \). The values are displayed
+      both for the true sample data (solid) and the noisy samples (dashed). The
+      noise is distributed as \( \N(0, \tfrac{5}{100})\).}
+    \label{fig:ols_scores}
+  \end{figure}
+
+  \subsubsection{Ordinary Least Squares}
+  
+  We sample \( N = 1000 \) points in each parameter direction and compute the
+  corresponding \( N^2 \) funciton values of the Franke function both with and
+  without added noise. The noise was selected to be distributed as \( \N(0,
+  1) \) with a signal-to-noise ratio \( \alpha = 0.05\).
+  
+  We then perform ordinary least squares, and compute the mean squared error as
+  well as the \( R^2 \)-score for both the true and the noisy data. These are
+  presented in \cref{fig:ols_scores}. With the Franke function being a weighted
+  sum of exponentials, the MSE-error tends to zero as the polynomial degree
+  increases. The added noise reduces the convergence rate, as is to be
+  expected. 
+  
+  In addition to the evaluation metrics, we also compute confidence intervals
+  for each model parameter. These are displayed in \cref{tab:ols_confidence}
+  for each polynomial degree up to and including \( d = 5 \).
+  
+  \begin{table}
+    \caption{}
+    \label{tab:ols_confidence}
+  \end{table}
   \section{Terrain Data}
 	
   \chapter{Conclusion}
