@@ -8,7 +8,7 @@ class Regression(object):
         self.X = X
         self.y = y
         self.xtx = np.dot(X.T, X)
-        self.inv = np.linalg.inv if inversion_method == 'direct' else None
+        self.inv = np.linalg.inv if inversion_method == 'direct' else Regression.svd_inv
 
     def fit(self):
         raise NotImplementedError()
@@ -54,6 +54,15 @@ class Regression(object):
         :return: variance of beta
         """
         return np.diag(self.beta_covariance_estimate)
+
+    @property
+    def beta_std_dev_estimate(self):
+        """
+        Returns the estimated standard deviations for beta by taking the square root of the variance estimate.
+
+        :return: standard deviation of beta
+        """
+        return np.sqrt(self.beta_variance_estimate)
 
     def mse(self):
         """
@@ -152,7 +161,7 @@ if __name__ == '__main__':
     X[:, 1] = x
     y = 4 * x ** 4 + np.random.normal(0, np.sqrt(9), 10000)
 
-    O = OLS(X, y)
+    O = OLS(X, y, inversion_method='svd')
     R = Ridge(X, y, lmbd=0.1)
     L = Lasso(X, y, lmbd=0.1)
     print(O.beta)
