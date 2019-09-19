@@ -504,6 +504,24 @@ Assignment One}}
     \label{fig:ols_scores}
   \end{figure}
 
+\begin{figure}
+    \centering
+    \subbottom{%
+      \includegraphics[width=0.45\linewidth]{images/OLS_MSE_score_crossval.pdf}
+    }
+    \subbottom{%
+      \includegraphics[width=0.45\linewidth]{images/OLS_R2_score_crossval.pdf}
+    }
+    \caption{Ordinary least squares regression on samples from the Franke
+      function with \( N = 100 \) points in each parameter direction, yielding a total data-size of \( N^2 = 10000 \) points.
+     We have used \( K \)-fold cross validation with \( K = 10 \).
+     The mean squared error (left) and the \(R^2\)-score (right) as
+      a function of the polynomial degree \( d \). The values are displayed
+      both for the training data (solid) and the test data (dashed). The
+      noise is distributed as \( \N(0, \tfrac{5}{100})\). Here we clearly see the effect of the bias-variance tradeoff. Note as the model complexity increases (higher polynomial degree), the model at some points overfits on the training data, yielding bad generalization scores, as signified by the sharp increase in \( \mathrm{MSE}_{\mathrm{test}} \).}
+    \label{fig:ols_scores}
+  \end{figure}
+
   \subsubsection{Ordinary Least Squares}
   
   We sample \( N = 1000 \) points in each parameter direction and compute the
