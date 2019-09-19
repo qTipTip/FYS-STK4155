@@ -60,6 +60,7 @@ if __name__ == '__main__':
     latexify(fig_width=4)
     plt.plot(polynomial_degrees, mse_scores_polynomial[0], ls='-', marker='o', label=r'$\mathrm{MSE}_{\mathrm{train}}(\mathbf{y}, \hat{\mathbf{y}})$')
     plt.plot(polynomial_degrees, mse_scores_polynomial[1], ls='--', marker='*', label=r'$\mathrm{MSE}_{\mathrm{test}}(\mathbf{y}, \hat{\mathbf{y}})$')
+    plt.xlabel(r'$d$')
     plt.legend()
     plt.tight_layout()
 
@@ -71,6 +72,7 @@ if __name__ == '__main__':
     latexify(fig_width=4)
     plt.plot(polynomial_degrees, r2_scores_polynomial[0], ls='-', marker='o', label=r'$\mathrm{R}^2_{\mathrm{train}}(\mathbf{y}, \hat{\mathbf{y}})$')
     plt.plot(polynomial_degrees, r2_scores_polynomial[1], ls='--', marker='*', label=r'$\mathrm{R}^2_{\mathrm{test}}(\mathbf{y}, \hat{\mathbf{y}})$')
+    plt.xlabel(r'$d$')
     plt.legend()
     plt.tight_layout()
 
