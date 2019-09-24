@@ -4,52 +4,52 @@ import matplotlib.pyplot as plt
 import tqdm
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-from assignment_one.src.aux import franke_function
+from sklearn.model_selection import KFold
+
+from assignment_one.src.auxiliary import franke_function
 from assignment_one.src.plotting import latexify, format_axes
 from assignment_one.src.regression_class import OLS
 
+
+def perform_k_fold(X, y, number_of_folds=1, regressor=OLS, seed=42):
+    """
+    Perform a single cross-validation resampling for the given regressor. All relevant
+    results are returned in the dictionary results.
+
+    :param X:
+    :param number_of_folds:
+    :param regressor:
+    :param seed:
+    :return:
+    """
+    results = {}
+    kf = KFold(n_splits=number_of_folds, shuffle=True, random_state=seed)
+
+    for i, (train_idx, test_idx) in enumerate(kf.split(X, y)):
+        print(i, train_idx, test_idx)
+        return results
+
+
+def perform_ols_estimates_with_and_without_noise(seed=42, number_of_folds=1):
+    np.random.seed(seed)
+    polynomial_degrees = range(2, 11)
+
+    N = 10
+    signal_to_noise = 0.01
+    x = np.random.random((N, 2))
+
+    z = np.array([franke_function(X, Y) for X, Y in x])
+    z_noise = z + signal_to_noise * np.random.normal(0, 1, z.shape)
+
+    regressor = OLS
+    for name, data in zip(['true', 'noise'], [z, z_noise]):
+        for d in polynomial_degrees:
+            poly_fit = sklearn.preprocessing.PolynomialFeatures(degree=d)
+            X = poly_fit.fit_transform(x)
+            results = perform_k_fold(X, data, number_of_folds, regressor, seed)
+
+    return
+
+
 if __name__ == '__main__':
-    N = 1000
-    polynomial_degrees = range(0, 11)
-
-    x = np.linspace(0, 1, N)
-    y = np.linspace(0, 1, N)
-
-    X, Y = np.meshgrid(x, y)
-    cartesian_product = np.dstack((X, Y)).reshape(-1, 2)
-    z_grid = franke_function(X, Y)
-    z_grid_noise = z_grid + np.random.normal(0, 0.05, size=(z_grid.shape))
-    z = z_grid.ravel()
-    z_noise = z_grid_noise.ravel()
-    mse_scores = []
-    r2_scores = []
-    mse_scores_noise = []
-    r2_scores_noise = []
-    for d in tqdm.tqdm(polynomial_degrees):
-        design_matrix = sklearn.preprocessing.PolynomialFeatures(degree=d).fit_transform(cartesian_product)
-        ols = OLS(design_matrix, z)
-        ols_noise = OLS(design_matrix, z_noise)
-
-        mse_scores.append(ols.mse())
-        r2_scores.append(ols.r2())
-        mse_scores_noise.append(ols_noise.mse())
-        r2_scores_noise.append(ols_noise.r2())
-
-
-    latexify(3)
-    plt.semilogy(polynomial_degrees, mse_scores, ls='-', marker='o')
-    plt.semilogy(polynomial_degrees, mse_scores_noise, ls='--', marker='^')
-    plt.xlabel('$d$')
-    plt.ylabel('$\\mathrm{MSE}(\\mathbf{y}, \\hat{\\mathbf{y}})$')
-    plt.tight_layout()
-    format_axes(ax=plt.gca())
-    plt.savefig('../article/images/OLS_MSE_score.pdf')
-    plt.clf()
-
-    plt.plot(polynomial_degrees, r2_scores, ls='-', marker='o')
-    plt.plot(polynomial_degrees, r2_scores_noise, ls='--', marker='^')
-    plt.xlabel('$d$')
-    plt.ylabel('$\\mathrm{R}^2(\\mathbf{y}, \\hat{\\mathbf{y}})$')
-    plt.tight_layout()
-    format_axes(ax=plt.gca())
-    plt.savefig('../article/images/OLS_R2_score.pdf')
+    perform_ols_estimates_with_and_without_noise(42, 10)
