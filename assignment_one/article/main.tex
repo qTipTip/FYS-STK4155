@@ -278,7 +278,7 @@ Assignment One}}
   \end{align}
 
   \subsection{The bias-variance tradeoff} 
-  
+  \label{sub:bias_variance} 
   Since we are attempting to estimate a true distribution based on finite
   samples, there are certain statistical properties it is worthwile discussing.
   We follow the derivation from \autocite{mehtaHighbiasLowvarianceIntroduction2019}.  Recall
@@ -299,6 +299,7 @@ Assignment One}}
   \emph{\textcolor{Maroon}{variance}}, \emph{\textcolor{Blue}{bias}}, and
   \emph{\textcolor{Green}{noise}}:
   \begin{equation}
+    \label{eq:bias_variance}
     \expect_{\data, \varepsilon}[\cost(\data, \beta)] = \frac{1}{n} \textcolor{Blue}{\sum_{i=1}^n \left(f(\x_i) - \expect_{\data}\left[\hat{y}_i\right]\right)^2}  + \frac{1}{n}\textcolor{Maroon}{\sum_{i=1}^n \expect_{\data}\big[\left(\hat{y}_i - \expect_{\data} [\hat{y}_i]\right)^2\big]} + \textcolor{Green} \sigma^2.
   \end{equation}
   See \cref{ap:derivation} for the full derivation. The bias-term measures the
@@ -327,10 +328,11 @@ Assignment One}}
   When the dimensionality of the matrix \( \X \) is high, the problem of
   near-collinear columns often arise, as mentioned earlier. Thus, the model
   parameters \( \beta_{\OLS} \) of the ordinary least squares regression cannot
-  be determined. The propsed fix to this problem is to slightly perturb the
-  matrix \( \X^T \X \) by adding small positive values along the diagonal to
-  ensure its invertability. This is known as \emph{ridge regression} and yields
-  a model parameter estimator
+  be determined. The propsed fix to this problem
+  \cite{tikhonovNumericalMethodsSolution1995,hoerlRidgeRegressionBiased} is to
+  slightly perturb the matrix \( \X^T \X \) by adding small positive values
+  along the diagonal to ensure its invertability. This is known as \emph{ridge
+  regression} and yields a model parameter estimator
   \begin{equation}
     \beta_{\ridge}(\lambda) = (\X^T\X + \lambda\mat{I})^{-1}\X^T\y
   \end{equation}
@@ -469,10 +471,22 @@ Assignment One}}
   interpretation of this interval is  ``under repeated experiments, the number
   of computed confidence intervals that actually include the true parameter,
   will tend to \( 95\% \)''.
+ 
+  We are also interested in computing the model bias and variance as discussed
+  in \cref{sub:bias_variance}. Numerically, we estimate these quantities by
+  replacing the expectation values in \cref{eq:bias_variance} by averages.
+
+  \subsection{Cross-validation}
+
+  In order to obtain more reasonable estimates for these statistical
+  quantities, we perform so-called \emph{resampling} of the data. There are
+  several approaches to resampling, with two of the more common ones being
+  \emph{bootstrap} and \emph{k-fold cross-validation}. Without going into
+  details, the bootstrap method generally performs better with a significant
+  data size, with cross-validation also performing well on smaller data sets.
+  With this in mind, we will discuss cross-validation here.
   
-
-
-
+  
   \chapter{Numerical Results}
 
   In this section we present some of the results of the numerical simulations.
