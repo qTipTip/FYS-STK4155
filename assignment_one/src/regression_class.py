@@ -137,9 +137,6 @@ class OLS(Regression):
 
 class Ridge(Regression):
 
-    def fit(self):
-        pass
-
     def __init__(self, X, y, inversion_method='direct', lmbd=0.1):
         super().__init__(X, y, inversion_method)
         self.lmbd = lmbd

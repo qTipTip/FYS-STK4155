@@ -4,7 +4,6 @@ import sklearn.model_selection
 import sklearn.preprocessing
 import tqdm
 
-from assignment_one.src.part_b import polynomial_degrees
 from assignment_one.src.regression_class import OLS
 
 
@@ -74,7 +73,8 @@ def create_variance_table(beta_variance, feature_names, polynomial_degrees):
     return df
 
 
-def perform_cross_validation(cartesian_product, z_values, number_of_folds=10, Regressor=OLS, lambd=None):
+def perform_cross_validation(cartesian_product, z_values, polynomial_degrees, number_of_folds=10, Regressor=OLS,
+                             lambd=None):
     mse_s = []
     r2_s = []
     beta_variance = []
@@ -98,9 +98,9 @@ def perform_cross_validation(cartesian_product, z_values, number_of_folds=10, Re
             X_test = poly_fit.fit_transform(x_test)
 
             if lambd is None:
-                regressor = Regressor(X_train, z_train)
+                regressor = Regressor(X_train, z_train, inversion_method='svd')
             else:
-                regressor = Regressor(X_train, z_train, lambd=lambd)
+                regressor = Regressor(X_train, z_train, lambd=lambd, inversion_method='svd')
 
             z_hat_train = regressor.predict(X_train)
             z_hat_test = regressor.predict(X_test)

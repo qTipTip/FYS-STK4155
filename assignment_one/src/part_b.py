@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from assignment_one.src.auxiliary import franke_function, create_variance_table, perform_cross_validation
+from assignment_one.src.auxiliary import franke_function, perform_cross_validation, create_variance_table
 from assignment_one.src.plotting import latexify, format_axes
 from assignment_one.src.regression_class import OLS
 
@@ -37,6 +37,7 @@ if __name__ == '__main__':
     number_of_folds = 10
 
     mse_s, r2_s, beta, beta_variance, beta_std, feature_names = perform_cross_validation(cartesian_product, z_noise,
+                                                                                         polynomial_degrees=polynomial_degrees,
                                                                                          number_of_folds=number_of_folds,
                                                                                          Regressor=OLS)
     # plot_errors()
