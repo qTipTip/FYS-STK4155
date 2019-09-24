@@ -6,8 +6,10 @@
 
 \usepackage[]{mathtools}
 \usepackage[]{amssymb}
-\usepackage[]{libertine}
-\usepackage[]{libertinust1math}
+%\usepackage[]{libertine}
+%\usepackage[]{libertinust1math}
+\usepackage[]{mathpazo}
+\usepackage[]{eulervm}
 \usepackage[T1]{fontenc}
 \usepackage[]{microtype}
 \usepackage[]{geometry}
@@ -23,6 +25,7 @@
 \usepackage{mdframed}
 \usepackage[]{FiraMono}
 \usepackage[]{FiraSans}
+\usepackage[]{siunitx}
 
 \usepackage[backend=biber, style=alphabetic, url=false, doi=false]{biblatex}
 \addbibresource{../../FYS-STK4155.bib}
@@ -513,19 +516,24 @@ Assignment One}}
       \includegraphics[width=0.45\linewidth]{images/OLS_R2_score_crossval.pdf}
     }
     \caption{Ordinary least squares regression on samples from the Franke
-      function with \( N = 100 \) points in each parameter direction, yielding a total data-size of \( N^2 = 10000 \) points.
-     We have used \( K \)-fold cross validation with \( K = 10 \).
-     The mean squared error (left) and the \(R^2\)-score (right) as
-      a function of the polynomial degree \( d \). The values are displayed
-      both for the training data (solid) and the test data (dashed). The
-      noise is distributed as \( \N(0, \tfrac{5}{100})\). Here we clearly see the effect of the bias-variance tradeoff. Note as the model complexity increases (higher polynomial degree), the model at some points overfits on the training data, yielding bad generalization scores, as signified by the sharp increase in \( \mathrm{MSE}_{\mathrm{test}} \).}
+	    function with \( N = 100 \) points in each parameter direction,
+	    yielding a total data-size of \( N^2 = 10000 \) points.  We have
+	    used \( K \)-fold cross validation with \( K = 10 \).  The mean
+	    squared error (left) and the \(R^2\)-score (right) as a function of
+	    the polynomial degree \( d \). The values are displayed both for
+	    the training data (solid) and the test data (dashed). The noise is
+    distributed as \( \N(0, \tfrac{5}{100})\). Here we clearly see the effect
+    of the bias-variance tradeoff. Note as the model complexity increases
+    (higher polynomial degree), the model at some points overfits on the
+    training data, yielding bad generalization scores, as signified by the
+    sharp increase in \( \mathrm{MSE}_{\mathrm{test}} \).}
     \label{fig:ols_scores}
   \end{figure}
 
   \subsubsection{Ordinary Least Squares}
   
   We sample \( N = 1000 \) points in each parameter direction and compute the
-  corresponding \( N^2 \) funciton values of the Franke function both with and
+  corresponding \( N^2 \) function values of the Franke function both with and
   without added noise. The noise was selected to be distributed as \( \N(0,
   1) \) with a signal-to-noise ratio \( \alpha = 0.05\).
   
@@ -541,9 +549,47 @@ Assignment One}}
   for each polynomial degree up to and including \( d = 5 \).
   
   \begin{table}
-    \caption{}
+		\begin{tabular}{llllllr}
+	\toprule
+	{\(d\)} &         0 &         1 &         2 &         3 &         4 &         5 \\
+	\midrule
+	$1$       & \num{1.030e-05} & \num{2.010e-05} & \num{5.315e-05} & \num{6.349e-05} & \num{7.072e-05} & \num{6.696e-05} \\[1em]
+	$x$       &       {} & \num{3.435e-05} & \num{4.673e-04} & \num{1.682e-03} & \num{4.398e-03} & \num{8.402e-03} \\
+	$y$       &       {} & \num{3.435e-05} & \num{4.673e-04} & \num{1.683e-03} & \num{4.396e-03} & \num{8.400e-03} \\[1em]
+	$x^2$     &       {} &       {} & \num{3.686e-04} & \num{6.458e-03} & \num{4.694e-02} & \num{1.959e-01} \\
+	$x y$     &       {} &       {} & \num{2.948e-04} & \num{4.106e-03} & \num{2.873e-02} & \num{1.195e-01} \\
+	$y^2$     &       {} &       {} & \num{3.686e-04} & \num{6.460e-03} & \num{4.692e-02} & \num{1.959e-01} \\[1em]
+	$x^3$     &       {} &       {} &       {} & \num{2.575e-03} & \num{8.868e-02} & \num{9.884e-01} \\
+	$x^2 y$   &       {} &       {} &       {} & \num{1.985e-03} & \num{5.199e-02} & \num{5.432e-01} \\
+	$x y^2$   &       {} &       {} &       {} & \num{1.985e-03} & \num{5.199e-02} & \num{5.429e-01} \\
+	$y^3$     &       {} &       {} &       {} & \num{2.575e-03} & \num{8.864e-02} & \num{9.884e-01} \\[1em]
+	$x^4$     &       {} &       {} &       {} &       {} & \num{2.084e-02} & \num{1.078e+00} \\
+	$x^3 y$   &       {} &       {} &       {} &       {} & \num{1.585e-02} & \num{6.287e-01} \\
+	$x^2 y^2$ &       {} &       {} &       {} &       {} & \num{1.528e-02} & \num{5.443e-01} \\
+	$x y^3$   &       {} &       {} &       {} &       {} & \num{1.585e-02} & \num{6.285e-01} \\
+	$y^4$     &       {} &       {} &       {} &       {} & \num{2.083e-02} & \num{1.078e+00} \\[1em]
+	$x^5$     &       {} &       {} &       {} &       {} &       {} & \num{1.658e-01} \\
+	$x^4 y$   &       {} &       {} &       {} &       {} &       {} & \num{1.253e-01} \\
+	$x^3 y^2$ &       {} &       {} &       {} &       {} &       {} & \num{1.193e-01} \\
+	$x^2 y^3$ &       {} &       {} &       {} &       {} &       {} & \num{1.192e-01} \\
+	$x y^4$   &       {} &       {} &       {} &       {} &       {} & \num{1.253e-01} \\
+	$y^5$     &       {} &       {} &       {} &       {} &       {} & \num{1.658e-01} \\
+	\bottomrule
+	\end{tabular}
+	\caption{The variance of the model parameters \( beta \) with respect
+		to the polynomial degree \( d \). The corresponding basis
+		function is displayed to the left. Note in particular how the
+		variance of the model parameters seems to increase with the
+		polynomial degree, which is what is to be expected according to
+	the \emph{bias-variance tradeoff}.}
     \label{tab:ols_confidence}
   \end{table}
+
+  \subsubsection{Ridge and Lasso regression}
+
+  We now incorporate Ridge and Lasso regression in our numerical experiments.
+  We are still working with the noisy sampled data.
+
   \section{Terrain Data}
 	
   \chapter{Conclusion}
