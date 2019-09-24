@@ -1,9 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import sklearn.model_selection
-import tqdm
 
-from assignment_one.src.auxiliary import franke_function, mse, r2, create_variance_table
+from assignment_one.src.auxiliary import franke_function, create_variance_table, perform_cross_validation
 from assignment_one.src.plotting import latexify, format_axes
 from assignment_one.src.regression_class import OLS
 
@@ -23,54 +21,6 @@ def plot_errors():
     plt.tight_layout()
     format_axes(ax=plt.gca())
     plt.savefig('../article/images/OLS_R2_score_crossval.pdf')
-
-
-def perform_cross_validation(cartesian_product, z_values, number_of_folds=10, Regressor=OLS, lambd=None):
-    mse_s = []
-    r2_s = []
-    beta_variance = []
-    beta_std = []
-    beta = []
-
-    kf = sklearn.model_selection.KFold(n_splits=number_of_folds, shuffle=True)
-
-    for d in tqdm.tqdm(polynomial_degrees):
-        mse_scores = []
-        r2_scores = []
-        bvar = []
-        std = []
-        beta_vals = []
-        for train_idx, test_idx in kf.split(cartesian_product):
-            x_train, x_test = cartesian_product[train_idx], cartesian_product[test_idx]
-            z_train, z_test = z_values[train_idx], z_values[test_idx]
-
-            poly_fit = sklearn.preprocessing.PolynomialFeatures(degree=d)
-            X_train = poly_fit.fit_transform(x_train)
-            X_test = poly_fit.fit_transform(x_test)
-
-            regressor = Regressor(X_train, z_train)
-
-            z_hat_train = regressor.predict(X_train)
-            z_hat_test = regressor.predict(X_test)
-
-            mse_scores.append((mse(z_train, z_hat_train), mse(z_test, z_hat_test)))
-            r2_scores.append((r2(z_train, z_hat_train), r2(z_test, z_hat_test)))
-            bvar.append(regressor.beta_variance_estimate)
-            std.append(regressor.beta_std_dev_estimate)
-            beta_vals.append(regressor.beta)
-
-        mse_s.append(np.array(mse_scores).mean(axis=0))
-        r2_s.append(np.array(r2_scores).mean(axis=0))
-        beta_variance.append(np.array(bvar).mean(axis=0))
-        beta_std.append(np.array(std).mean(axis=0))
-        beta.append(np.array(beta_vals).mean(axis=0))
-
-    mse_s = np.array(mse_s)
-    r2_s = np.array(r2_s)
-
-    feature_names = poly_fit.get_feature_names()
-
-    return mse_s, r2_s, beta, beta_variance, beta_std, feature_names
 
 
 if __name__ == '__main__':
