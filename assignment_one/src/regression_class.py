@@ -172,12 +172,3 @@ if __name__ == '__main__':
     O = OLS(X, y, inversion_method='svd')
     R = Ridge(X, y, lmbd=0.1)
     L = Lasso(X, y, lmbd=0.1)
-    print(O.beta)
-    print(R.beta)
-    print(L.beta)
-
-    print(O.predict())
-    for e in O, R, L:
-        print(e.y_variance_estimate)
-        print(e.beta_variance_estimate)
-        print(e.r2(), e.mse())

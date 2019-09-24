@@ -27,6 +27,9 @@ if __name__ == '__main__':
     mse_scores_polynomial = np.zeros((2, len(polynomial_degrees)))
     r2_scores_polynomial = np.zeros((2, len(polynomial_degrees)))
 
+    bias = []
+    vars = []
+
     for d in polynomial_degrees:
 
         print(f'Performing {NUMBER_OF_FOLDS}-fold cross-validation for degree {d} polynomial')
@@ -39,6 +42,7 @@ if __name__ == '__main__':
         r2_values = np.zeros((2, NUMBER_OF_FOLDS))
 
         # split into test and train
+        test_predictions = []
         for i, (train_idx, test_idx) in enumerate(kf.split(design_matrix)):
             X_train, X_test = design_matrix[train_idx], design_matrix[test_idx]
             z_train, z_test = z_values[train_idx], z_values[test_idx]
@@ -51,15 +55,21 @@ if __name__ == '__main__':
             mse_values[:, i] = [mse(z_train, z_hat_train), mse(z_test, z_hat_test)]
             r2_values[:, i] = [r2(z_train, z_hat_train), r2(z_test, z_hat_test)]
 
+            test_predictions.append(z_hat_test)
+
+        test_predictions = np.array(test_predictions)
+
         # compute the mean values over all folds
         mse_scores_polynomial[:, d] = mse_values.mean(axis=1)
         r2_scores_polynomial[:, d] = r2_values.mean(axis=1)
 
-
+        bias.append(np.mean(np.mean(test_predictions)))
     # plot estimated errors
     latexify(fig_width=4)
-    plt.plot(polynomial_degrees, mse_scores_polynomial[0], ls='-', marker='o', label=r'$\mathrm{MSE}_{\mathrm{train}}(\mathbf{y}, \hat{\mathbf{y}})$')
-    plt.plot(polynomial_degrees, mse_scores_polynomial[1], ls='--', marker='*', label=r'$\mathrm{MSE}_{\mathrm{test}}(\mathbf{y}, \hat{\mathbf{y}})$')
+    plt.plot(polynomial_degrees, mse_scores_polynomial[0], ls='-', marker='o',
+             label=r'$\mathrm{MSE}_{\mathrm{train}}(\mathbf{y}, \hat{\mathbf{y}})$')
+    plt.plot(polynomial_degrees, mse_scores_polynomial[1], ls='--', marker='*',
+             label=r'$\mathrm{MSE}_{\mathrm{test}}(\mathbf{y}, \hat{\mathbf{y}})$')
     plt.xlabel(r'$d$')
     plt.legend()
     plt.tight_layout()
@@ -70,8 +80,10 @@ if __name__ == '__main__':
     plt.show()
 
     latexify(fig_width=4)
-    plt.plot(polynomial_degrees, r2_scores_polynomial[0], ls='-', marker='o', label=r'$\mathrm{R}^2_{\mathrm{train}}(\mathbf{y}, \hat{\mathbf{y}})$')
-    plt.plot(polynomial_degrees, r2_scores_polynomial[1], ls='--', marker='*', label=r'$\mathrm{R}^2_{\mathrm{test}}(\mathbf{y}, \hat{\mathbf{y}})$')
+    plt.plot(polynomial_degrees, r2_scores_polynomial[0], ls='-', marker='o',
+             label=r'$\mathrm{R}^2_{\mathrm{train}}(\mathbf{y}, \hat{\mathbf{y}})$')
+    plt.plot(polynomial_degrees, r2_scores_polynomial[1], ls='--', marker='*',
+             label=r'$\mathrm{R}^2_{\mathrm{test}}(\mathbf{y}, \hat{\mathbf{y}})$')
     plt.xlabel(r'$d$')
     plt.legend()
     plt.tight_layout()

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import sklearn
 
+from assignment_one.src.auxiliary import r2
 from assignment_one.src.regression_class import OLS, Lasso, Ridge
 
 
@@ -27,6 +28,10 @@ def test_against_sklearn(d, regressor, sklearn_reg, lmd):
 
     np.testing.assert_allclose(beta, beta_sklearn, rtol=1e-4)
     np.testing.assert_allclose(y_hat, y_hat_sklearn, rtol=1e-4)
+
+    sk_error = sklearn.metrics.mean_squared_error(y, y_hat_sklearn)
+    error = O.mse()
+    assert abs(sk_error - error) < 1.0e-6
 
 
 def get_data(d):
