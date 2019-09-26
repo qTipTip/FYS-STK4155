@@ -9,6 +9,7 @@ class Regression(object):
         self.y = y
         self.xtx = np.dot(X.T, X)
         self.inv = np.linalg.inv if inversion_method == 'direct' else Regression.svd_inv
+        self.name = 'RegressionBaseClass'
 
     def fit(self):
         raise NotImplementedError()
@@ -140,6 +141,7 @@ class Ridge(Regression):
     def __init__(self, X, y, inversion_method='direct', lmbd=0.1):
         super().__init__(X, y, inversion_method)
         self.lmbd = lmbd
+        self.name = 'Ridge'
 
     @property
     def beta(self):
@@ -157,6 +159,7 @@ class Lasso(Regression):
         self.lmbd = lmbd
         self._regressor = sklearn.linear_model.Lasso(alpha=self.lmbd, fit_intercept=False)
         self._regressor.fit(self.X, self.y)
+        self.name = 'Lasso'
 
     @property
     def beta(self):
