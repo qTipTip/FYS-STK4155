@@ -3,13 +3,13 @@ import sklearn.linear_model
 
 
 class Regression(object):
+    name = 'RegressionBaseClass'
 
     def __init__(self, X, y, inversion_method='direct'):
         self.X = X
         self.y = y
         self.xtx = np.dot(X.T, X)
         self.inv = np.linalg.inv if inversion_method == 'direct' else Regression.svd_inv
-        self.name = 'RegressionBaseClass'
 
     def fit(self):
         raise NotImplementedError()
@@ -123,6 +123,7 @@ class Regression(object):
 
 
 class OLS(Regression):
+    name = 'OLS'
     @property
     def beta(self):
         if hasattr(self, '_beta'):
@@ -137,11 +138,11 @@ class OLS(Regression):
 
 
 class Ridge(Regression):
+    name = 'Ridge'
 
     def __init__(self, X, y, inversion_method='direct', lmbd=0.1):
         super().__init__(X, y, inversion_method)
         self.lmbd = lmbd
-        self.name = 'Ridge'
 
     @property
     def beta(self):
@@ -153,6 +154,7 @@ class Ridge(Regression):
 
 
 class Lasso(Regression):
+    name = 'Lasso'
 
     def __init__(self, X, y, inversion_method='direct', lmbd=0.1):
         super().__init__(X, y, inversion_method)

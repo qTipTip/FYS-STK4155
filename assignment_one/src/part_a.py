@@ -13,16 +13,16 @@ from assignment_one.src.regression_class import OLS, Ridge
 
 def perform_k_fold(X, y, number_of_folds=1, regressor=OLS, regressor_parameters={}):
     """
-    Perform a single cross-validation resampling for the given regressor. All relevant
-    intermediate_results are returned in the dictionary intermediate_results.
+    Perform a single cross-validation re-sampling for the given regressor. All relevant
+    intermediate_results are returned in the dictionary intermediate_results, and aggregated as mean-values.
 
     :param X:
     :param number_of_folds:
     :param regressor:
-    :param seed:
     :return:
     """
-    intermediate_results = {'mse': [], 'r2': [], 'model_bias': [], 'model_variance': [], 'beta_variance': []}
+    intermediate_results = {'regressor': regressor.name, 'mse': [], 'r2': [], 'model_bias': [], 'model_variance': [],
+                            'beta_variance': [], 'regressor_params': regressor_parameters}
 
     kf = KFold(n_splits=number_of_folds, shuffle=True)
 
@@ -32,7 +32,7 @@ def perform_k_fold(X, y, number_of_folds=1, regressor=OLS, regressor_parameters=
 
         regr = regressor(X_train, y_train, **regressor_parameters)
 
-        y_hat_train = regr.predict(X_train)
+        y_hat_train = regr.predict(X_train)  # this predict, while not used - performs the fit behind the scenes.
         y_hat_test = regr.predict(X_test)
         test_pred_mean = y_hat_test.mean()
 
@@ -42,7 +42,9 @@ def perform_k_fold(X, y, number_of_folds=1, regressor=OLS, regressor_parameters=
         intermediate_results['model_bias'].append(np.mean((y_test - test_pred_mean) ** 2))
         intermediate_results['beta_variance'].append(regr.beta_variance_estimate)
 
-    intermediate_results.update({k: np.array(v).mean(axis=0) for (k, v) in intermediate_results.items()})
+    intermediate_results.update(
+        {k: np.array(v).mean(axis=0) for (k, v) in intermediate_results.items() if
+         k not in ['regressor', 'regressor_params']})
 
     return intermediate_results
 
@@ -60,13 +62,16 @@ def perform_ols_estimates_with_and_without_noise(seed=42, number_of_folds=1):
 
     regressor = Ridge
     regr_params = {'lmbd': 0.001}
+    results = {}
     for name, data in zip(['true', 'noise'], [z, z_noise]):
+
+        results[name] = {'degrees': polynomial_degrees, 'data': []}
         for d in polynomial_degrees:
             poly_fit = sklearn.preprocessing.PolynomialFeatures(degree=d)
             X = poly_fit.fit_transform(x)
-            results = perform_k_fold(X, data, number_of_folds, regressor, regr_params)
-
-
+            r = perform_k_fold(X, data, number_of_folds, regressor, regr_params)
+            results[name]['data'].append(r)
+    print(results)
     return
 
 
