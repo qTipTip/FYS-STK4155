@@ -6,19 +6,20 @@ from assignment_one.src.auxiliary import r2
 from assignment_one.src.regression_class import OLS, Lasso, Ridge
 
 
+@pytest.mark.parametrize('inversion_method', ['svd'])
 @pytest.mark.parametrize("d", range(10))
 @pytest.mark.parametrize("regressor, sklearn_reg, lmd",
                          [(OLS, sklearn.linear_model.LinearRegression, None), (Ridge, sklearn.linear_model.Ridge, 0.1),
                           (Lasso, sklearn.linear_model.Lasso, 0.1)])
-def test_against_sklearn(d, regressor, sklearn_reg, lmd):
+def test_against_sklearn(d, regressor, sklearn_reg, lmd, inversion_method):
     X, y = get_data(d)
 
     if lmd:
         linreg = sklearn_reg(fit_intercept=False, alpha=lmd).fit(X, y)
-        O = regressor(X, y, inversion_method='svd', lmbd=lmd)
+        O = regressor(X, y, inversion_method=inversion_method, lmbd=lmd)
     else:
         linreg = sklearn_reg(fit_intercept=False).fit(X, y)
-        O = regressor(X, y, inversion_method='svd')
+        O = regressor(X, y, inversion_method=inversion_method)
 
     beta = O.beta
     y_hat = O.predict(X)
@@ -31,7 +32,7 @@ def test_against_sklearn(d, regressor, sklearn_reg, lmd):
 
     sk_error = sklearn.metrics.mean_squared_error(y, y_hat_sklearn)
     error = O.mse()
-    assert abs(sk_error - error) < 1.0e-6
+    assert abs(sk_error - error) < 1.0e-4
 
 
 def get_data(d):
