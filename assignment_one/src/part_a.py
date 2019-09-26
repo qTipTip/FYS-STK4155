@@ -11,7 +11,7 @@ from assignment_one.src.plotting import latexify, format_axes
 from assignment_one.src.regression_class import OLS
 
 
-def perform_k_fold(X, y, number_of_folds=1, regressor=OLS, seed=42):
+def perform_k_fold(X, y, number_of_folds=1, regressor=OLS):
     """
     Perform a single cross-validation resampling for the given regressor. All relevant
     results are returned in the dictionary results.
@@ -23,7 +23,7 @@ def perform_k_fold(X, y, number_of_folds=1, regressor=OLS, seed=42):
     :return:
     """
     results = {}
-    kf = KFold(n_splits=number_of_folds, shuffle=True, random_state=seed)
+    kf = KFold(n_splits=number_of_folds, shuffle=True)
 
     for i, (train_idx, test_idx) in enumerate(kf.split(X, y)):
         print(i, train_idx, test_idx)
@@ -34,7 +34,7 @@ def perform_ols_estimates_with_and_without_noise(seed=42, number_of_folds=1):
     np.random.seed(seed)
     polynomial_degrees = range(2, 11)
 
-    N = 10
+    N = 100
     signal_to_noise = 0.01
     x = np.random.random((N, 2))
 
@@ -46,7 +46,7 @@ def perform_ols_estimates_with_and_without_noise(seed=42, number_of_folds=1):
         for d in polynomial_degrees:
             poly_fit = sklearn.preprocessing.PolynomialFeatures(degree=d)
             X = poly_fit.fit_transform(x)
-            results = perform_k_fold(X, data, number_of_folds, regressor, seed)
+            results = perform_k_fold(X, data, number_of_folds, regressor)
 
     return
 
