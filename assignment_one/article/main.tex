@@ -19,16 +19,17 @@
 \usepackage[]{bm}
 \usepackage[]{amsmath}
 \usepackage[]{commath}
-\usepackage[]{todonotes}
 \usepackage[]{graphicx}
 \usepackage{titling}
 \usepackage{mdframed}
 \usepackage[]{FiraMono}
 \usepackage[]{FiraSans}
 \usepackage[]{siunitx}
+\usepackage[]{booktabs} 
 
 \usepackage[backend=biber, style=alphabetic, url=false, doi=false]{biblatex}
 \addbibresource{../../FYS-STK4155.bib}
+\usepackage[]{hyperref} 
 \usepackage[noabbrev, capitalize]{cleveref}
 
 
@@ -36,8 +37,7 @@
 mdframed={
 }]{remark}
 \declaretheorem[style=remark, name=Assumption,
-mdframed={
-}]{assumption}
+]{assumption}
 
 \title{\Large\textsc{Regression And Resampling Techniques \\
   FYS-STK4155 \\
@@ -59,6 +59,8 @@ Assignment One}}
 \newcommand{\lasso}{\mathrm{lasso}}
 \newcommand{\python}{\textsf{Python}{}}
 \newcommand{\sgn}{\,\mathrm{sign}{}}
+\newcommand{\train}{\mathrm{train}}
+\newcommand{\test}{\mathrm{test}}
 
 \newcommand{\mat}[1]{\bm{#1}}
 \newcommand{\y}{\bm{y}}
@@ -66,6 +68,10 @@ Assignment One}}
 \newcommand{\cost}{\mathcal{C}}
 \newcommand{\N}{\mathcal{N}}
 \newcommand{\basis}{\mathcal{B}}
+
+\newcommand*{\github}[1]{\def\@github{\color{gray!70}#1}}
+\newcommand{\githublogo}{\raisebox{-1pt}{\includegraphics[height=9pt]{images/github}}}
+
 %\newcommand{\set}[1]{\left\{\, #1 \right\}}
 
 \pretitle{%
@@ -87,6 +93,10 @@ Assignment One}}
 	  the Franke function. Statistical quantities pertaining to the various
 	  model functions are computed and compared. We also give an
 	  introduction to the theory and motivation behind the three methods.
+          Implementation details can be found on GitHub:	
+
+	  \centering{\href{https://github.com/qTipTip/FYS-STK4155}{\githublogo \, \color{gray!50}\textit{github.com/qTipTip}}}
+		
   \end{abstract}
 
   \tableofcontents
@@ -172,12 +182,11 @@ Assignment One}}
     \hat{y}_i)^2}{\sum_{i=1}^n (y_i - \overline{y})^2}.
   \end{equation}
   The \(R^2\)-score measures much of the variation in \( \y \) which can be
-  attributed to a simple linear relation between \( \x \) and \( \y \). It is a
-  ratio, thus a value of one tells us that all the variation in the data can be
-  attributed to an approximate linear relationship between the data \(\x\) and
-  the response variable \( \y \). A value of zero indicates that a non-linear
-  model may be preferrable.
-  
+  attributed to a simple linear relation between \( \x \) and \( \y \).  A
+  value of one tells us that all the variation in the data can be attributed to
+  an approximate linear relationship between the data \(\x\) and the response
+  variable \( \y \). A negative value tells us that the model performs worse
+  than a horizontal line through the data.
 
   \section{Ordinary Least Squares}
   
@@ -302,7 +311,7 @@ Assignment One}}
     \label{eq:bias_variance}
     \expect_{\data, \varepsilon}[\cost(\data, \beta)] = \frac{1}{n} \textcolor{Blue}{\sum_{i=1}^n \left(f(\x_i) - \expect_{\data}\left[\hat{y}_i\right]\right)^2}  + \frac{1}{n}\textcolor{Maroon}{\sum_{i=1}^n \expect_{\data}\big[\left(\hat{y}_i - \expect_{\data} [\hat{y}_i]\right)^2\big]} + \textcolor{Green} \sigma^2.
   \end{equation}
-  See \cref{ap:derivation} for the full derivation. The bias-term measures the
+  The bias-term measures the
   deviation of the expectation of the model function \(f(\data, \beta)\) from
   the true value \( f \), while the variance-term measures the fluctuations
   arising due to using different samples of the true data.
@@ -485,8 +494,19 @@ Assignment One}}
   details, the bootstrap method generally performs better with a significant
   data size, with cross-validation also performing well on smaller data sets.
   With this in mind, we will discuss cross-validation here.
-  
-  
+
+  Given a data-set \( \data = (\x_i, y_i)_{i=1}^n \), we divide it into two disjoint subset \( \data_\train \) and \( \data_\test \)
+  with the purpose of optimizing our model by training on \( \data_\train \) and evaluating model performance on the ``unseen data'' of \( \data_\test \).
+
+  Cross-validation entails repeated such splitting of the data-set into test
+  and training sets, evaluating model performance on each such split, and then
+  finally agregating the results to get a good estimate of model performance
+  over the whole data-set. In \emph{k-fold cross-validation}, the data is
+  specifically subdivided into \( k \) equal parts, where each sub-set takes on
+  the role of \( \data_\test \) exactly once.
+   
+  In our implementation we have made use of \textsc{sklearn}'s \textsc{KFold} method, with \( k = 10 \).
+
   \chapter{Numerical Results}
 
   In this section we present some of the results of the numerical simulations.
@@ -541,15 +561,15 @@ Assignment One}}
     (higher polynomial degree), the model at some points overfits on the
     training data, yielding bad generalization scores, as signified by the
     sharp increase in \( \mathrm{MSE}_{\mathrm{test}} \).}
-    \label{fig:ols_scores}
+    \label{fig:ols_scores_crossval}
   \end{figure}
 
   \subsubsection{Ordinary Least Squares}
   
-  We sample \( N = 1000 \) points in each parameter direction and compute the
-  corresponding \( N^2 \) function values of the Franke function both with and
-  without added noise. The noise was selected to be distributed as \( \N(0,
-  1) \) with a signal-to-noise ratio \( \alpha = 0.05\).
+  We randomly sampled \( N = 1000 \) points in the unit-square and compute the
+  corresponding \( N \) function values of the Franke function both with and
+  without added noise. The noise was selected to be distributed as \( \N{0,
+  1} \) with a signal-to-noise ratio \( \alpha = 0.05 \). 
   
   We then perform ordinary least squares, and compute the mean squared error as
   well as the \( R^2 \)-score for both the true and the noisy data. These are
@@ -558,9 +578,9 @@ Assignment One}}
   increases. The added noise reduces the convergence rate, as is to be
   expected. 
   
-  In addition to the evaluation metrics, we also compute confidence intervals
-  for each model parameter. These are displayed in \cref{tab:ols_confidence}
-  for each polynomial degree up to and including \( d = 5 \).
+  In addition to the evaluation metrics, we also compute the variance for each
+  model parameter.  These are displayed in \cref{tab:ols_confidence} for each
+  polynomial degree from \(d = 2 \) up to and including \( d = 5 \).
   
   \begin{table}
 		\begin{tabular}{llllllr}
@@ -590,25 +610,147 @@ Assignment One}}
 	$y^5$     &       {} &       {} &       {} & \num{1.658e-01} \\
 	\bottomrule
 	\end{tabular}
-	\caption{The variance of the model parameters \( beta \) with respect
+	\caption{The variance of the model parameters \( \beta \) with respect
 		to the polynomial degree \( d \). The corresponding basis
 		function is displayed to the left. Note in particular how the
 		variance of the model parameters seems to increase with the
-		polynomial degree, which is what is to be expected according to
-	the \emph{bias-variance tradeoff}.}
+		polynomial degree, which is what is to be expected according to the
+		\emph{bias-variance tradeoff}.}
     \label{tab:ols_confidence}
   \end{table}
 
   \subsubsection{Ridge and Lasso regression}
 
   We now incorporate Ridge and Lasso regression in our numerical experiments.
-  We are still working with the noisy sampled data.
+  Both of these regression techniques rely on a hyper-parameter \( \lambda \)
+  which has to be tuned to the data at hand. By plotting the estimated bias and
+  variance of the  model as a function of the hyper-parameter \( \lambda \) we
+  find the optimal parameter. The fits were performed on the same data as in
+  the aforementioned OLS-test, and the results are presented in
+  \cref{fig:bias_variance_lambda}. However, in this case we only use bi-quintic
+  polynomial surfaces.
+
+  \begin{figure}[htpb]
+  	\centering
+	\subbottom[Ridge regression]{%
+		\includegraphics[width=0.45\linewidth]{images/bias_variance_ridge.pdf}
+	}
+	\subbottom[Lasso regression]{%
+		\includegraphics[width=0.45\linewidth]{images/bias_variance_lasso.pdf}
+	}
+	\caption{Finding the optimal hyper-parameter \( \lambda \) for both
+		Ridge and Lasso regression. The fits were perfomed for
+		bi-quintic polynomial surfaces with noisy data sampled from the
+		Franke function. As we see, the variance is fairly constant,
+	until it suddenly increases. The bias on the other hand converges to
+	zero. The optimal lambda is indicated by a vertical line. Note how the error is
+	constant after a certain value of \( \lambda \). By looking at
+	\cref{fig:ridge_lasso_beta_variance}, this is the point at which all
+	Lasso-parameters are set to zero.}%
+  	\label{fig:bias_variance_lambda}
+  \end{figure}
+
+  We also plot the model parameters \( \beta \) and their standard deviations
+  as a function of \( \lambda \).  It is expected that the parameters \(
+  \beta_\ridge\) tends to zero as \( \lambda \) increases, while the parameters
+  \( \beta_\lasso\) may in addition be set equal to zero. This is verified by
+  the plots in \cref{fig:ridge_lasso_beta_variance}.
+ 
+  \begin{figure}[htpb]
+  	\centering
+	\subbottom[Ridge regression]{%
+		\includegraphics[width=0.45\linewidth]{images/variance_ridge.pdf}
+	}
+	\subbottom[Lasso regression]{%
+		\includegraphics[width=0.45\linewidth]{images/variance_lasso.pdf}
+	}
+	\caption{The model parameters \( \beta \) with associated standard
+	deviations. We do not label each line to not clutter the plot, as its
+	main purpose is to illustrate how Ridge and Lasso regression, respectively,
+	penalizes model parameters. Note that for the Lasso regression, the model is
+	quite sparse, and in particular, note how the \( \lambda \) where all
+	parameters are zero correspond to the constant behaviour in
+	\cref{fig:bias_variance_lambda}.}% 
+	\label{fig:ridge_lasso_beta_variance}
+  \end{figure}
+	
+  In \cref{tbl:ridge_lasso_mse_r2} we present the mean squared error and
+  \(R^2\)-score for fits performed with optimal hyper parameter \( \lambda \)
+  as indicated in \cref{fig:bias_variance_lambda} and compare them to an
+  OLS-fit.
+
+  \begin{table}[htpb]
+  	\centering
+	\caption{The MSE and \( R^2 \) score for the Franke function using
+		bi-quintic polynomial surfaces and the optimal hyper parameters
+		for Ridge and Lasso respectively. According to the reported
+		metrics, the OLS-method performs significantly better than both
+		Ridge and Lasso. The \(R^2\)-scores reported for Ridge and
+	Lasso seem unreasonably low compared to OLS, which may indicate an
+error in the implementation, or the authors lack of experience in the field.}
+  	\label{tbl:ridge_lasso_mse_r2}
+  	\begin{tabular}{llll}
+		\toprule
+		{} & OLS & Ridge & Lasso \\
+		\midrule
+		\( \mathrm{MSE} \) & \num{0.011} & \num{0.080} & \num{0.092} \\
+		\( \mathrm{R}^2 \) & \num{0.879} & \num{0.140} & \num{0.005} \\
+		\bottomrule
+  	\end{tabular}
+  \end{table}
 
   \section{Terrain Data}
+
+  When testing on real data, in order to keep the data-size manageable, we
+  select a small patch from the large dataset.  This patch is subsequently
+  normalized in order to improve numerical properties of the methods.
+  Unfortunately, due to time-constraints, and numerical bugs - we only present
+  the MSE and \(R^2\) scores for the various methods with fixed
+  hyper-parameters lambda for Ridge and Lasso regression originally selected
+  for the previous dataset.  Ideally, hyper-parameter optimzation as done in
+  \cref{fig:bias_variance_lambda} should be performed for this new data-set as
+  well, and further statistical quantities reported.
+  
+  The normalized patch is displayed in \cref{fig:sub_terrain}, and the performance metrics in \cref{fig:terrain_metrics}.
+  \begin{figure}[htpb]
+  	\centering
+  	\includegraphics[width=0.8\linewidth]{images/reduced_terrain_data.pdf}
+	\caption{A small patch from the larger data-set displayed in \cref{fig:terrain}. The data has been normalized.}%
+	\label{fig:sub_terrain}
+  \end{figure}
+
 	
+  \begin{figure}[htpb]
+  	\centering
+	\subbottom{
+		\includegraphics[width=0.45\linewidth]{images/terrain_data_mse.pdf}	
+	}
+	\subbottom{
+		\includegraphics[width=0.45\linewidth]{images/terrain_data_r2.pdf}	
+	}
+	\caption{The performance metrics reported for polynomial fits to the
+	small terrain patch. As we can see, the Ordinary Least Squares
+regression seems to be the better chocice for terrain data with high local
+variance. It seems like both Ridge and Lasso struggles with finer features
+going missing, as they penalize large but ``irrelevant'' model parameters.}%
+	\label{fig:terrain_metrics}
+  \end{figure}
+
   \chapter{Conclusion}
 
-  
+  In this project we have studied three kinds of linear regression, namely
+  Ordinary Least Squares, Ridge, and Lasso regression.  We tested the methods
+  on artificial data sampled from the Franke function, and later tested the
+  methods on terrain data.
+
+  Due to some unfortunate implementation errors and time constraints, the study
+  on the terrain data were rather uncomplete, however the one result we did
+  manage to get indicates that for data such as the terrain data presented
+  here, the ordinary least squares method may be slightly better. All numerical
+  methods were tested against \textsc{sklearn}'s methods, and the problems
+  persisted, indicating rather that there is a more fundamental
+  misunderstanding from the authors part. 
+
   \section{Further work}
 
   In this project we have discussed three different methods of linear
@@ -620,7 +762,7 @@ Assignment One}}
   constructing efficient local methods have been proposed. Spline-based
   (piecewise polynomial) methods in particular have been important, and several
   approaches to locally refined spline spaces have started to gain momentum.
-  We note in particular that of \emph{hierarchical B-splines} (HB),
+  We note in particujlar that of \emph{hierarchical B-splines} (HB),
   \emph{truncated hierarchical B-splines} (THB) and \emph{locally refined
   B-splines} (LRB). These methods allow us to place more degrees of freedom in
   regions of high data-variance, thus locally increasing the model complexity.
@@ -634,10 +776,8 @@ Assignment One}}
   simple setting as linear regression, as done in this project, taking into
   account adaptive refinement of the spline spaces with respect to the sampled
   data set.
- 
-
-   
-
+	
+  \if 0
   \appendix
   \chapter{Derivation of the bias-variance-noise relationship}
   \label{ap:derivation}
@@ -662,6 +802,7 @@ Assignment One}}
   \end{align}
   \fi
   Combining the two previous equations, we obtain
+  \fi
  
 \printbibliography
 \end{document} 
