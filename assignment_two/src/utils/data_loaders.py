@@ -1,6 +1,10 @@
 from pathlib import Path
 
 import pandas
+import torch
+import sklearn
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataset import T_co
 
@@ -38,3 +42,59 @@ class CreditCardData(Dataset):
 
         self.num_items = self.X.shape[0]
         self.num_features = self.X.shape[1]
+
+    def extract_and_transform_data(self, data):
+        """
+        Extracts the data and performs normalization.
+        :param data: pandas dataframe containing the credit card data.
+        :return: input variables X and response variables y.
+        """
+
+        X = data.loc[:, data.columns != 'default_payment_next_month'].values
+        y = data.loc[:, data.columns == 'default_payment_next_month'].values
+
+        # Onehot-encoding.
+        # TODO: Make this work with sparse pytorch tensors.
+        one_hot_enc = OneHotEncoder(categories='auto', sparse=False)
+
+        # We set remainder to pass-through to avoid dropping untransformed columns
+        # One-hot-encodes the categorical columns, corresponding to GENDER, EDUCATION, MARITAL_STATUS
+        X = ColumnTransformer([("", one_hot_enc, [1, 2, 3]), ], remainder='passthrough').fit_transform(X)
+        # y = one_hot_enc.fit_transform(y)
+        # The CrossEntropyLoss expects class-labels and not one-hot encoded targets, hence we do not one-hot-encode,
+        # and rather squeeze the array to get conforming shapes.
+        y = y.squeeze()
+
+        # Input scaling
+        X = torch.tensor(X, dtype=torch.float32)
+        y = torch.tensor(y, dtype=torch.long)
+        x_mean = X.mean(0, keepdim=True)
+        x_stdev = X.std(0, unbiased=False, keepdim=True)
+        X -= x_mean
+        X /= x_stdev
+
+        return X, y
+
+    @staticmethod
+    def remove_zero_rows(data):
+        """
+        Removes any rows where the data is identically zero across all payments.
+        :param data:
+        :return: data with dropped rows
+        """
+
+        data = data.drop(data[(data.BILL_AMT1 == 0) &
+                              (data.BILL_AMT2 == 0) &
+                              (data.BILL_AMT3 == 0) &
+                              (data.BILL_AMT4 == 0) &
+                              (data.BILL_AMT5 == 0) &
+                              (data.BILL_AMT6 == 0)].index)
+
+        data = data.drop(data[(data.PAY_AMT1 == 0) &
+                              (data.PAY_AMT2 == 0) &
+                              (data.PAY_AMT3 == 0) &
+                              (data.PAY_AMT4 == 0) &
+                              (data.PAY_AMT5 == 0) &
+                              (data.PAY_AMT6 == 0)].index)
+
+        return data
