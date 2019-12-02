@@ -1,8 +1,12 @@
+"""
+This file contains code for running logistic regression on the CreditCardData-set. We use the built in LogisticRegression
+model from sklearn, and perform a hyper-parameter optimization using grid search. We explore both l1 and l2 regularization.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, SGDClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
 
 from assignment_two.src.utils.data_loaders import CreditCardData
 
