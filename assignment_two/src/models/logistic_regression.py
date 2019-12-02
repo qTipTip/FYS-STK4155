@@ -31,15 +31,16 @@ l2_params = [
     }
 ]
 
-logspace = np.logspace(0, -3, 100)
 clf_l1 = GridSearchCV(LogisticRegression(), l1_params, cv=5, verbose=True, n_jobs=-1)
 clf_l2 = GridSearchCV(LogisticRegression(), l2_params, cv=5, verbose=True, n_jobs=-1)
 
 clf_l1.fit(X, y)
 clf_l2.fit(X, y)
 
-plt.semilogx(l1_params[0]['C'], clf_l1.cv_results_['mean_test_score'], label='l1')
-plt.semilogx(l2_params[0]['C'], clf_l2.cv_results_['mean_test_score'], label='l2')
+plt.semilogx(l1_params[0]['C'], clf_l1.cv_results_['mean_test_score'], label='l1', color='blue')
+plt.semilogx(l2_params[0]['C'], clf_l2.cv_results_['mean_test_score'], label='l2', color='green')
 
+plt.scatter(clf_l1.best_params_['C'], clf_l1.best_score_)
+plt.scatter(clf_l2.best_params_['C'], clf_l2.best_score_)
 plt.legend()
 plt.show()
