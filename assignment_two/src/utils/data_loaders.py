@@ -5,7 +5,7 @@ import pandas
 import torch
 import sklearn
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, normalize, scale
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -67,12 +67,9 @@ class CreditCardData(Dataset):
         y = y.squeeze()
 
         # Input scaling
-        X = torch.tensor(X, dtype=torch.float32)
+        X = scale(X)
+        X = torch.tensor(X, dtype=torch.double)
         y = torch.tensor(y, dtype=torch.long)
-        x_mean = X.mean(0, keepdim=True)
-        x_stdev = X.std(0, unbiased=False, keepdim=True)
-        X -= x_mean
-        X /= x_stdev
 
         return X, y
 
