@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Tuple
 
 import pandas
 import torch
@@ -6,24 +7,23 @@ import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from torch.utils.data import Dataset, DataLoader
-from torch.utils.data.dataset import T_co
 
 
 class CreditCardData(Dataset):
 
-    def __getitem__(self, index: int) -> T_co:
+    def __getitem__(self, index: int):
         return self.X[index], self.y[index]
 
     def __len__(self) -> int:
         return self.num_items
 
-    def __init__(self, file_path: str = '../../data/credit_Card_data.xls') -> None:
+    def __init__(self, file_path: str = '/home/ivar/Downloads/FYS-STK4155/assignment_two/data/credit_card_data.xls') -> None:
         super().__init__()
 
         self.file = Path(file_path)
         self.fetch_data()
 
-    def fetch_data(self):
+    def fetch_data(self) -> None:
         """
         Responsible for reading the credit card data-file.
         """
@@ -43,7 +43,7 @@ class CreditCardData(Dataset):
         self.num_items = self.X.shape[0]
         self.num_features = self.X.shape[1]
 
-    def extract_and_transform_data(self, data):
+    def extract_and_transform_data(self, data) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Extracts the data and performs normalization.
         :param data: pandas dataframe containing the credit card data.
@@ -98,3 +98,9 @@ class CreditCardData(Dataset):
                               (data.PAY_AMT6 == 0)].index)
 
         return data
+
+
+if __name__ == '__main__':
+    D = CreditCardData()
+
+    print(D.X, D.y)
