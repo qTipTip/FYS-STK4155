@@ -19,4 +19,3 @@ for name, reg_type, alpha in regressors:
     z_hat = reg.predict(franke_data.X)
     print(name, 'R2', reg.score(franke_data.X, franke_data.z))
     print(name, 'MSE', mean_squared_error(franke_data.z, z_hat))
-jk
