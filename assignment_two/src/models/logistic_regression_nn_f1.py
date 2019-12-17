@@ -1,12 +1,18 @@
 import numpy as np
+from skorch import NeuralNetClassifier
 from sklearn.model_selection import GridSearchCV
+import torch.nn as nn
 import torch
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 from skorch.dataset import CVSplit
 
 from assignment_two.src.models.neural_network import GenericNN, RegularizedNeuralNetClassifier
 from assignment_two.src.utils.data_loaders import CreditCardData
+
+
+
 
 credit_card_data = CreditCardData()
 
@@ -35,7 +41,8 @@ clf = GridSearchCV(
     net,
     params,
     n_jobs=12,
-    cv=5
+    cv=5,
+    scoring='f1'
 )
 clf.fit(credit_card_data.X.numpy(), credit_card_data.y.numpy())
 
@@ -46,9 +53,9 @@ plt.fill_between(params['lr'], clf.cv_results_['mean_test_score'] - clf.cv_resul
 plt.scatter(clf.best_params_['lr'], clf.best_score_)
 plt.title(rf'Optimal learning rate $\lambda = {clf.best_params_["lr"] :.04e}$')
 plt.xlabel(rf'Learning rate $\lambda$')
-plt.ylabel(rf'Classification accuracy')
+plt.ylabel(rf'F1-score')
 plt.legend()
-plt.savefig('classification_credit_cards_nn.pdf')
+plt.savefig('classification_credit_cards_nn_f1.pdf')
 plt.show()
 print(f'Best score = {clf.best_score_}')
-np.save('saved_scores/logistic_regression_nn.npy', clf.cv_results_)
+np.save('logistic_regression_nn_f1.npy', clf.cv_results_)

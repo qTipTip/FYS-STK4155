@@ -1,11 +1,12 @@
 from pathlib import Path
 from typing import Tuple
 
+import numpy as np
 import pandas
 import torch
 import sklearn
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, normalize, scale
+from sklearn.preprocessing import OneHotEncoder, normalize, scale, PolynomialFeatures
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -98,5 +99,55 @@ class CreditCardData(Dataset):
         return data
 
 
+class FrankeDataSet(Dataset):
+
+    def __init__(self, num_points, signal_to_noise=0.1, noisy=True, random_seed=None, degree=5):
+        self.num_points = num_points
+        self.random_seed = random_seed
+        self.stn = signal_to_noise
+        self.noisy = noisy
+        self.degree = degree
+        self.polyfit = PolynomialFeatures(degree)
+        if random_seed:
+            np.random.seed(random_seed)
+
+        self._sample()
+
+    def _sample(self):
+        self.xy = np.random.uniform(0, 1, (self.num_points, 2))
+        self.X = self.polyfit.fit_transform(self.xy)
+        self.z = np.array([self._eval(x, y) for x, y in self.xy]).reshape((self.num_points, 1))
+
+        if self.noisy:
+            self.z_noise = self.z + np.random.normal(0, 1, size=self.z.shape) * self.stn
+
+    def _eval(self, x, y):
+        a = 3 / 4 * np.exp(-(9 * x - 2) ** 2 / 4 - (9 * y - 2) ** 2 / 4)
+        b = 3 / 4 * np.exp(-(9 * x + 1) ** 2 / 49 - (9 * y + 1) / 10)
+        c = 1 / 2 * np.exp(-(9 * x - 7) ** 2 / 4 - (9 * y - 3) ** 2 / 4)
+        d = 1 / 5 * np.exp(-(9 * x - 4) ** 2 - (9 * y - 7) ** 2)
+
+        return a + b + c - d
+
+    def __len__(self):
+        return self.num_points
+
+    def __getitem__(self, item):
+        if self.noisy:
+            return self.xy[item], self.z_noise[item]
+        else:
+            return self.xy[item], self.z[item]
+
+
 if __name__ == '__main__':
     D = CreditCardData()
+    F = FrankeDataSet(num_points=10000)
+
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
+    fig = plt.figure()
+    axs = Axes3D(fig)
+
+    axs.scatter(F.xy[:, 0], F.xy[:, 1], F.z_noise)
+    plt.show()

@@ -1,10 +1,14 @@
-\documentclass[a4paper, oneside, article]{memoir}
+\documentclass[a4paper, 11pt, oneside, article]{memoir}
+\newsubfloat{figure}
+\linespread{1.25}
 
 \usepackage{minted} 
 \usepackage[T1]{fontenc} 
 \usemintedstyle{algol}
 \usepackage[]{microtype}
+\usepackage[]{siunitx} 
 \usepackage[]{eulervm}
+\usepackage[]{booktabs} 
 \usepackage[]{palatino} 
 \usepackage[]{amsmath, amssymb} 
 \usepackage[]{graphicx} 
@@ -12,8 +16,13 @@
 \usepackage[]{bm} 
 \usepackage[]{commath} 
 \usepackage[]{geometry} 
+\newcommand*{\github}[1]{\def\@github{\color{gray!70}#1}}
+\newcommand{\githublogo}{\raisebox{-1pt}{\includegraphics[height=9pt]{imgs/github}}}
+\usepackage[backend=biber]{biblatex} 
+\addbibresource{../../FYS-STK4155.bib}
+
 \usepackage[]{hyperref} 
-\usepackage[]{cleveref} 
+\usepackage[noabbrev, capitalize]{cleveref} 
 
 \setlength{\parskip}{1em}
 \setlength{\parindent}{0pt}
@@ -33,9 +42,29 @@
 \begin{document}
 	\maketitle
 	
-	\begin{abstract}
+	 \begin{abstract}
+		 In this project we compare the performance of dense neural
+		 network architectures to more classical methods of linear and
+		 logistic regression in the context of fault detection of
+		 credit card loans and linear regression of the franke function.
 		
-	\end{abstract}
+		 Our results indicate that for classification tasks, neural
+		 nets has a slight edge over non-regularized logistic
+		 regression, with the regularized methods falling behind. For
+		 regression, again the non-regularized methods come out on top,
+		 with the neural net and the ordinary least squares methods
+		 winning by a long shot.
+
+
+	 The numerical experiments are performed using \textsc{Python} with the
+	 \texttt{scikit-learn} library resonsible for fitting the models,
+	 \texttt{PyTorch} for handling data-sets and representing the nerual
+	 network architecture, and finally \texttt{skorch} for wrapping the
+	 neural networks in a \texttt{scikit-learn} friendly API. All relevant code can
+	 be found on GitHub:
+	
+		  \centering{\href{https://github.com/qTipTip/FYS-STK4155}{\githublogo \, \color{gray!50}\textit{github.com/qTipTip}}}
+	  \end{abstract}
 	\chapter{Introduction}
 	
 
@@ -44,6 +73,11 @@
 	compare feed forward neural networks in this context with the standard
 	methods of ordinary least squares for linear regression, and logistic
 	regression for classification. 
+
+	Neural networks are a very flexible framework in a wide range of tasks.
+	In this day and age where artificial intelligence is gaining traction,
+	it is certainly of interest to see how these methods perform in
+	settings where many classical methods have been developed. 
 
 	\chapter{Background}
 
@@ -151,14 +185,15 @@ two.}%
 	\paragraph{Regression Data}
 		
 	For our regression task, we create a synthetic data-set by noisy
-	sampling of points from the Franke test-function, and our goal is to
-	create a neural network that approximates the Franke function. Thus,
-	our network should take as input a set of two values, and return a
-	scalar. Again, we use a rectified linear unit as our activation
-	function for the hidden layers, however, since we want an unrestrained
-	output range, we do not add the softmax activation to the final layer,
-	as this would squeeze the network output between zero and one.
-	Our cost function is the mean squared error (MSE):
+	sampling of points from the Franke test-function
+	\cite{frankeCriticalComparisonMethods1979}, and our goal is to create a
+	neural network that approximates the Franke function. Thus, our network
+	should take as input a set of two values, and return a scalar. Again,
+	we use a rectified linear unit as our activation function for the
+	hidden layers, however, since we want an unrestrained output range, we
+	do not add the softmax activation to the final layer, as this would
+	squeeze the network output between zero and one.  Our cost function is
+	the mean squared error (MSE):
 	\begin{equation}
 		\cost(\mat{y}, \yhat) = \frac{1}{n} (\y - \yhat)^T (\y - \yhat).
 	\end{equation}
@@ -194,8 +229,8 @@ two.}%
 	of hidden layers and the the number of hidden units (which we take as
 	constant across the hidden layers). Furthermore, we also with to be
 	able to specify the final activation function, as this needs to be
-	specially tailored (as much else) to the task at hand. The generic architecture is layed out in
-	\cref{lst:neural_network}.
+	specially tailored (as much else) to the task at hand. The generic
+	architecture is layed out in \cref{lst:neural_network}.
 	
 	\begin{listing}
 	\begin{minted}[frame=lines,tabsize=3]{python}
@@ -268,7 +303,7 @@ class GenericNN(torch.nn.Module):
 		x = self.f(self.output_layer(x))
 		
 		return x
-	\end{minted}	
+	\end{minted}
 	\caption{A generic dense neural network realized in the PyTorch
 	framework. By implementing the forward method, gradients are kept track
 	of automatically, and hence no consideration is to be made for the backward
@@ -282,8 +317,10 @@ class GenericNN(torch.nn.Module):
 	logistic regression, we simply use the scikit-learn toolkit. These
 	classifiers can be trained by calling \texttt{fit}-method. By utilizing
 	cross validation methods, we optimize the hyper-parameters. This will
-	be discussed further in the results-section. As an example, for the credit-card dataset, we
-	train the classifiers shown in \cref{lst:classifier_credit_card}, performing a grid-search for the best regularization strength:
+	be discussed further in the results-section. As an example, for the
+	credit-card dataset, we train the classifiers shown in
+	\cref{lst:classifier_credit_card}, performing a grid-search for the
+	best regularization strength.
 	\begin{listing}
 	\begin{minted}[frame=lines, tabsize=3]{python}
 l1_params = [{'penalty':['l1'],'C':np.logspace(-4, 4, 40),\
@@ -309,10 +346,25 @@ available CPU-cores, to speed up the process.}
 
 	\section{Numerical Results}
 	
-	In this section, we present the findings from our numerical experiments.
-
+	In this section, we present the findings from our numerical
+	experiments.
+		
 	\subsection{Credit card data}
-	
+
+	For the credit card data, we are solving a classification problem. It
+	would seem reasonable to use \emph{classification accuracy} as the
+	scoring metric of choice. However, upon further inspection of the
+	data-set, we see that the data set consists of highly unbalanced
+	classes, with about 78.6\% zeros, and the rest ones. This means, that a
+	network only predicting zeroes, will be correct 78.6\% of the time.
+	Therefore, in order to better illuminate the model performance, we use
+	in addition the \emph{balanced accuracy score} (bACC), which takes into
+	account the class imbalances. It is defined as such:
+	\begin{equation}
+		\mathrm{bACC} = \frac{TPR + TNR}{2},
+	\end{equation}
+	where \( TPR \) and \( TNR \) is the true positive rate, and the
+	true negative rate of the model, respecitvely.
 
 	We train our sklearn-classifiers as in
 	\cref{lst:classifier_credit_card}. We do a hyper-parameter search for
@@ -331,26 +383,29 @@ available CPU-cores, to speed up the process.}
 	logistic regression. Incidentally, it is also this non-penalized method
 	that performs the best with a classification accuracy of \( 81.6 \% \).
 	
+	
 	The neural network classifier is trained using the
-	\texttt{skorch}-framework, which acts as an interface to scikit-learn
-	for PyTorch. Using this allows for  simple hyper-parameter optimization
-	as in scikit-learn, and one may test for instance network depth, width,
-	and regularization strength. Unfortunately, due to time constraints, we
-	were only able to perform a learning-rate optimization. However, the
-	implementation in \cref{lst:classification_nn} allows for other sets of
-	hyper-parameters to be tested. 
+	\texttt{skorch}-framework \cite{SkorchdevSkorch2019}, which
+	acts as an interface to scikit-learn for PyTorch. Using this allows for
+	simple hyper-parameter optimization as in scikit-learn, and one may
+	test for instance network depth, width, and regularization strength.
+	Unfortunately, due to time constraints, we were only able to perform a
+	learning-rate optimization.  However, the implementation in
+	\cref{lst:classification_nn} allows for other sets of hyper-parameters
+	to be tested. 
 
 	\begin{figure}[htpb]
 		\centering
-		\includegraphics[width=0.8\linewidth]{imgs/credit_card_classification.pdf}
-		\caption{The results of the \( L^1 \) and \( L^2 \) regularized logistic regression. 
-			The two regularization types seems to converge to
-			exactly the same classification accuracy as
-			non-penalized logistic regression, with this value being 81.6\%. As \( \lambda \)
-			increases, the penalization term is set to zero, hence
-			converges to non-penalized regression. Why this
-			coincides with the best fit is not clear to me.
-		}%
+		\subbottom[Optimizing for classification accuracy]{\includegraphics[width=0.44\linewidth]{imgs/credit_card_classification.pdf}}
+		\subbottom[Optimizing for balanced classification accuracy]{\includegraphics[width=0.44\linewidth]{imgs/credit_card_classification_balanced_accuracy.pdf}}
+		\caption{The results of the \( L^1 \) and \( L^2 \) regularized
+			logistic regression.  The two regularization types
+			seems to converge to exactly the same classification
+			accuracy as non-penalized logistic regression, with
+			this value being 81.6\%. As \( \lambda \) increases,
+		the penalization term is set to zero, hence converges to
+	non-penalized regression. Why this coincides with the best fit is not
+clear to me.  }%
 		\label{fig:credit_cards_classical}
 	\end{figure}
 
@@ -383,10 +438,10 @@ clf = GridSearchCV(
     cv=5
 )
 clf.fit(credit_card_data.X.numpy(), credit_card_data.y.numpy())
-	\end{minted}	
+	\end{minted}
 	\caption{By wrapping the GenericNN in a RegularizedNeuralNetClassifier
 	(see \cref{lst:rnnc}) we may train the PyTorch model using the
-	GridSearchCV-functionality from scikit-learn.}
+GridSearchCV-functionality from scikit-learn.}
 	\label{lst:classification_nn}
 	\end{listing}
 
@@ -397,12 +452,14 @@ clf.fit(credit_card_data.X.numpy(), credit_card_data.y.numpy())
 	
 	\begin{figure}[htpb]
 		\centering
-		\includegraphics[width=0.8\linewidth]{imgs/classification_credit_cards_nn.pdf}
+		\subbottom[]{\includegraphics[width=0.45\linewidth]{imgs/classification_credit_cards_nn.pdf}}
+		\subbottom[]{\includegraphics[width=0.45\linewidth]{imgs/classification_credit_cards_nn_balanced_accuracy.pdf}}
+			
 		\caption{The classification accuracy as a function of the
 			learning rate for the generic neural network. At the
 			opimal learning rate, the network achieves a prediction
 			accuracy of approximately 82.54\%, which is not
-			insignificantly better than all the classical methods.
+			marginally better than all the classical methods.
 			The filled blue regions represent the standard
 			deviations as reported by \texttt{GridSearchCV}. Note
 			how the network at performs it's worst by guessing only
@@ -411,10 +468,75 @@ clf.fit(credit_card_data.X.numpy(), credit_card_data.y.numpy())
 	with momentum and 5-fold cross validation. }%
 		\label{fig:credit_card_nn}
 	\end{figure}
+
+	\subsection{Franke function}
+	
+	We take two approaches to regression of the Franke function. We
+	approximate this functional relationship using a dense neural network,
+	and we compare this to a standard polynomial fit of the same data. We
+	choose the polynomial degree to be five. Such a polynomial fit were
+	discussed in more detail in
+	\citetitle{stangebyFYSSTK4155Project2019}\cite{stangebyFYSSTK4155Project2019}.
+	We re-use the optimal regularization parameters found for Ridge and
+	Lasso-regression for bi-quintic polynomials \cite[Section 4, p.
+	16]{stangebyFYSSTK4155Project2019}:
+	\begin{align}
+		\label{eq:optimal_reg_params}
+		\lambda_{\mathrm{LASSO}} = \num{4.23e-2}, \quad \lambda_{\mathrm{RIDGE}} = \num{2.36e2}.
+	\end{align}
+
+	Our neural network architecture consists of three hidden layers with 20
+	nodes each, two nodes features, and one output node. We use
+	\textsc{Relu} as our activation function, and our output-activation is
+	the identity.
+
+	We sample \( N = 2000 \) points of the Franke function, and we add
+	normally distributed noise with zero mean and unit deviation, with a
+	signal to noise ratio of 0.1.
+
+	As our performance metric we use the mean-squared error, and we perform
+	hyper-parameter optimization using grid-search for the learning rate. A
+	5-fold cross-validation scheme is used, as in the credit-card
+	experiments.
+	
+	The grid search results are shown in \cref{fig:regression_nn_cv}.
+	\begin{figure}[htpb]
+		\centering
+		\includegraphics[width=0.8\linewidth]{imgs/regression_nn.pdf}
+		\caption{The mean squared error as a function of learning rate.
+		The network was trained using 5-fold cross-validation with
+	momentum SGD over 20 epochs. The lowest MSE reported was approximately
+0.012 signifying that the network does not fit to the noise.}%
+	\label{fig:regression_nn_cv}
+	\end{figure}
+	
+	In \cref{tab:optimal_models_scores} we display the mean-squared error
+	and the \(R^2\)-score of the optimized Lasso, Ridge and neural-net
+	models. The numbers displayed clearly shows that the neural-network and
+	the ordinary least squares outperforms the two regularized methods
+	significantly.
+
+	\begin{table}[htpb]
+		\centering
+		\caption{The scores reported for the optimal Ridge, Lasso and neural-net models.}
+		\label{tab:optimal_models_scores}
+		\begin{tabular}{lrr}
+			\toprule
+			{Model} & MSE   & \( R^2 \) \\
+			\midrule			
+			NNet & 0.012 & 0.98 \\
+			OLS & 0.002 & 0.97 \\
+			Ridge & 0.06 & 0.25\\
+			Lasso & 0.03 & 0.64\\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	
+\clearpage
 \appendix
 
 \chapter{Regularized neural network}
-	\begin{listing}
+	\begin{listing}[htbp]
 	\begin{minted}[frame=lines, tabsize=3]{python}
 class RegularizedNeuralNetClassifier(NeuralNetClassifier):
 
@@ -448,7 +570,7 @@ class RegularizedNeuralNetClassifier(NeuralNetClassifier):
 	    					for w in self.module_.parameters()])
         return loss
 		
-	\end{minted}	
+	\end{minted}
 	\caption{We implemented a regularized neural network classifier in
 	order to be able to compare the network with both \( L^2 \) and \( L^1
 	\) regularization applied to the network weights. Unfortunately, we were not
@@ -456,8 +578,38 @@ class RegularizedNeuralNetClassifier(NeuralNetClassifier):
 	rather large.}
 	\label{lst:rnnc}
 	\end{listing}
-
-	\subsection{Franke function}
+	
+	\section{Conclusion}%
+	\label{sec:conclusion}
+	
+	In this project we have compared artifical neural network-based methods
+	to more classical regression methods in the context of surface-fitting
+	and classification. In both cases, it seems like regularized models
+	perform siginificantly worse than their counterparts. 
+	
+	In the classification of credit-card defaults, the numbers reported indicate
+	that the neural network performs slightly better than logistic
+	regression. However, upon inspection of the credit-card data-set, it is
+	evident that the classes are highly unbalanced, meaning that the
+	numerical results are hard to interpret. Using the standard
+	classification accuracy score is highly inconclusive in such unbalanced
+	cases, and it is hard to know exactly how much correction the balanced
+	classification accuracy offers.
+	
+	For the regression of the Franke function data-set we reuse optimal
+	parameters from \cite{stangebyFYSSTK4155Project2019}, and the
+	unpenalized least squares and the neural network methods come out on
+	top. Interestingly, the \( R^2 \)-scores reported in this project for
+	Ridge and Lasso regression are wildly different from those reported in
+	\cite{stangebyFYSSTK4155Project2019}, which indicates faults in the
+	previous implementation, and the \( R^2 \)-scores for both OLS and the
+	neural network seem suspiciously high, which may indicate overfitting
+	on the data-set.  Some additional investigation should be carried out,
+	specifically regularizing the weights in the neural net using the
+	implementation in \cref{lst:rnnc}. Alas, this will have to be for
+	another time.
+	
+\printbibliography
 \end{document}
 
 
