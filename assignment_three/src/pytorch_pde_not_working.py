@@ -75,8 +75,6 @@ for dx, dt in zip(desired_dx, desired_dt):
         u_trial.backward(torch.ones_like(u_trial), retain_graph=True)  # does not work
         dd_utrial = xt_vals.grad
 
-        print(compute_gradient_penalty(u_trial, xt_vals))
-
         loss = cost(d_utrial, dd_utrial)
         loss.backward()
 

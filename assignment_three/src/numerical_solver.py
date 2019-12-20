@@ -37,25 +37,31 @@ def initial_condition(x):
     return np.sin(np.pi * x)
 
 
-@np.vectorize
 def exact_solution(x, t):
-    return np.sin(np.pi(x)) * np.exp(-np.pi ** 2 * t)
+    return np.sin(np.pi * x) * np.exp(-np.pi ** 2 * t)
 
 
 if __name__ == '__main__':
 
-    desired_dx = [1 / 10, 1 / 20, 1 / 30, 1 / 40]
-
+    desired_dx = [1 / 10, 1 / 20, 1 / 30, 1 / 40, 1 / 100]
+    solutions = []
     for dx in desired_dx:
         dt = 1 / 2 * dx ** 2
 
         N = int(1 / dx)
+        n_vals = np.linspace(0, 1, N)
         T = int(1 / dt)
+        t_vals = np.linspace(0, 1, T)
 
-        u = ftcs(N, T, initial_condition=initial_condition)
-        import matplotlib.pyplot as plt
+        X_grid, T_grid = np.meshgrid(n_vals, t_vals)
 
-        for step in u:
-            plt.title(f'N = {N} T = {T}')
-            plt.plot(step, color='gray', alpha=0.7)
-        plt.show()
+        u_tilde = ftcs(N, T, initial_condition=initial_condition)
+        u_exact = exact_solution(X_grid, T_grid)
+        error = u_tilde - u_exact
+        print(f"""
+Errors with dx = {dx:.03f}
+    1-norm = {np.max(np.abs(error)):.5f}
+    2-norm = {np.linalg.norm(error, ord=2):.5f}
+""")
+
+        solutions.append(u_tilde)

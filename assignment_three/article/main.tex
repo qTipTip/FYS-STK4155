@@ -5,7 +5,9 @@
 \setlength{\parindent}{0em}
 \usepackage[]{eulervm} 
 \usepackage[]{palatino} 
+\usepackage[]{graphicx} 
 \usepackage[]{commath} 
+\usepackage[]{booktabs} 
 \usepackage[]{microtype} 
 \usepackage[]{geometry} 
 \usepackage[]{minted} 
@@ -20,11 +22,27 @@
 
 \newcommand{\cost}{\mathcal{C}}
 
+\newcommand*{\github}[1]{\def\@github{\color{gray!70}#1}}
+\newcommand{\githublogo}{\raisebox{-1pt}{\includegraphics[height=9pt]{imgs/github}}}
 \title{\textsc{Solving the heat-equation using neural networks}}
 \author{Ivar Stangeby}
 
 \begin{document}
 	\maketitle	
+
+	\begin{abstract}
+		In this project we compare a standard finite difference method
+		to neural networks in the solution of the heat equation. We
+		show that the neural network severely underperforms when
+		compared to the finite differences, and that the run-time is
+		significantly slower. This gives us no immediate reason to
+		chose a network based approach over classical methods. All
+		relevant code can be found on GitHub:
+
+		\centering{\href{https://github.com/qTipTip/FYS-STK4155}{\githublogo \, \color{gray!50}
+github.com/qTipTip }}
+
+	\end{abstract}
 
 	\chapter{Introduction}
 
@@ -296,7 +314,10 @@
 	\begin{equation}
 		e_p = \| u - \tilde{u} \|_p,
 	\end{equation}
-	where \( \| \cdot \|_p \) denotes the \(p\)-norm for vectors.
+	where \( \| \cdot \|_p \) denotes the matrix \(p\)-norm. We consider in
+	particular the \( \infty\)-norm, coinciding with the maximum absolute
+	error, and the \( 2 \)-norm, which is the standard euclidean
+	(Frobenius) norm.
 
 	\chapter{Implementation}
 	
@@ -383,7 +404,148 @@ def initial_condition(x):
 
 	\chapter{Numerical experiments}
 	
+	We start by running the forward in time--central in space scheme. The
+	errors are reported in \cref{tab:ftsc_errors}. The 2-norm steadily
+	decreases, which means that on average the approximation becomes better
+	with decreased grid-size. Also, the \( \infty\)-norm decreases steadily
+	towards zero. With this in mind, the approximations are fairly good at
+	even low spatial resolutions. Due to the stability criterion, running
+	this method for even smaller grid-sizes in space quickly becomes
+	infeasible.
+
+	\begin{table}[htpb]
+		\centering
+		\caption{Solving the heat equation for varying spatial
+			resolution, with the temporal resolution chosen to
+			satisfy the stability criterion. We report both the \(
+			e_1 \) and \( e_2 \) errors.} 
+		\label{tab:ftsc_errors}
+		\begin{tabular}{lrr}
+			\toprule
+			\textsc{FTCS} & \( e_\infty \) & \( e_2 \) \\
+			\midrule
+			\( \Delta x = 1 / 10 \) & \num{0.00357} & \num{0.04674} \\
+			\( \Delta x = 1 / 20 \) & \num{0.00098} & \num{0.03688} \\
+			\( \Delta x = 1 / 30 \) & \num{0.00044} & \num{0.03113} \\
+			\( \Delta x = 1 / 40 \) & \num{0.00025}& \num{0.02743} \\
+			\( \Delta x = 1 / 100 \) & \num{0.00004} &\num{0.01787} \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
 	
+	We now run the neural network. During testing we realized that the
+	neural network also needs a balance between the number of data-points
+	in the temporal domain and the number of data-points in the spatial
+	domain. We therefore run the network with both spatial and temporal
+	resolution increasing at the same rate, following that of
+	\cref{tab:ftsc_errors}. We evaluate the same errors. The network is run
+	for \( 10000 \) epochs (which in hindsight might be on the fewer end of
+	things), and the results are shown in \cref{tab:nnpde_errors}. Note in
+	particular how the error not neccesarily decreases with higher
+	resolution. This might indicate that a different architecture is to be
+	prefered. Maybe a shallower network with larger width. This will also
+	reduce the run-time of the network, as the current architecture is
+	quite sluggish.
+	
+	Taking the reported errors at face-value, the classical finite
+	difference method is to prefer, despite its stability issues.
+
+
+	\begin{table}[htpb]
+		\centering
+		\caption{Solving the heat equation for identical spatial and
+			teporal resolution.  In addition to the errors not
+			neccesarily decreasing on increased resolution, the
+			network complexity quickly increases, which incurs
+			significant run-time increase. This might indicate that
+			a different architecture is to be prefered.
+			} 
+		\label{tab:nnpde_errors}
+		\begin{tabular}{lrr}
+			\toprule
+			\textsc{FTCS} & \( e_\infty \) & \( e_2 \) \\
+			\midrule
+			\(\Delta t = \Delta x = 1 / 10 \) & \num{0.03684} & \num{0.14905} \\
+			\(\Delta t =  \Delta x = 1 / 20 \) & \num{0.14728} & \num{1.24897} \\
+			\(\Delta t =  \Delta x = 1 / 30 \) & \num{0.03979} & \num{0.39177} \\
+			\(\Delta t =  \Delta x = 1 / 40 \) & \num{0.04963}& \num{0.55036} \\
+			\(\Delta t =  \Delta x = 1 / 100 \) & \num{0.05103} &\num{1.35165} \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+
+	\chapter{Conclusion}
+	
+	In this project we have discussed the solution of the heat-equation,
+	both using finite-difference methods, and a neural network based
+	approach. Based on the results, the \emph{forward in time---centered in
+	space} difference scheme outperformed the neural net both in accuracy
+	and in runtime, despite its stability issues. 
+
+	The benefits of using a neural network for this problem is hard to see
+	at face value. One benefit is however that the neural network does not
+	need an underlying domain discretization. This does not constitute any
+	advantage in such a simple case as our 1D diffusion equation, but in
+	higher dimensions, this can prove to be a great advantage.
+
+	For instance in the finite element method, the numerical properties of
+	the approximation greatly hinges on the quality of the underlying mesh. 
+
+	The poor results of the neural network sparked an interest in trying
+	out different architectures, however I spent too much time trying to
+	make this work using \texttt{PyTorch}, and realized too late that I had
+	to migrate to \texttt{Tensorflow}, where my experience is lacking.
+	
+	In conclusion, for simple tasks like this, it seems like the neural
+	network works well, comparatively, for very coarse domain
+	discretizations, however falls behind finer resolutions.
+
+	Outside of the scope of this project would be the solution of the 2D
+	wave equation using a neural network over a non-trivial domain, which
+	might be able to highlight some of the benefits of not requiring domain
+	discretization.
 \clearpage
+
+\appendix
+
+\chapter{Finding eigenvalues}
+
+In this appendix we briefly discuss the idea behind how you can estimate
+eigenvalues and eigevectors of a real symmetric matrix using the neural network
+framework discussed in this project. Unfortunately, I was unable to make the
+network converge, and due to time-constraints this was relegated to an
+appendix.
+
+Following \cite{yiNeuralNetworksBased2004} we can also use our neural network
+to find the eigenvalues of a real symmetric matrix \( A \). In particular, let
+\( Q \)  be a \( 6 \times 6 \) random matrix and define
+\begin{equation}
+	A = \frac{Q^T + Q}{2}, 
+\end{equation}
+which then is a symmetric real matrix.
+
+In \cite{yiNeuralNetworksBased2004} they show that any non-zero equilibrium
+point of the system
+\begin{equation}
+	\pd{u(t)}{t} = -u(t) + f(u(t)), 
+\end{equation}
+where \( f(u) \) is defined as
+\begin{equation}
+	f(u) = \left[u^Tu A + \left(1 - u^TAu\right)I\right]u
+\end{equation}
+is an eigenvalue of the matrix \( A \).
+Here \( u \) is the network output.
+
+To recast this into our framework, we wish to minimize the function 
+\begin{equation}
+	\pd{u(t)}{t} + u(t) - f(u(t))
+\end{equation}
+with respect to our network parameters. The network is shown to converge to
+\emph{an} eigenvalue of the matrix \( A \). However, you can make the network
+converge to the largest eigenvalue by choosing an initial condition for the
+network non-orthogonal to the eigenspace of the largest eigenvalue. This
+eigenspace is not known a-priori, so a random initialization is made with the
+motivation that the probability is rather large that the random vector is not
+orthogonal to the eigenspace.
 \printbibliography
 \end{document}
