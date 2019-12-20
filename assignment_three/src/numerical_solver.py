@@ -21,12 +21,10 @@ def ftcs(space_resolution, time_resolution, space_min_max=[0, 1], time_max=1, bo
     dt = time_max / time_resolution
     u0, dx = np.linspace(*space_min_max, num=space_resolution, retstep=True)
     u = np.zeros((time_resolution, space_resolution))
-    u[:, 0] = boundary_conditions[0]
-    u[:, -1] = boundary_conditions[1]
+    u[:, [0, -1]] = boundary_conditions
     u[0] = initial_condition(u0)
 
     F = dt / dx ** 2
-    print(F)
     for step in tqdm.trange(time_resolution - 1):
         for i in range(1, space_resolution - 1):
             u[step + 1, i] = u[step, i] + F * (u[step, i - 1] - 2 * u[step, i] + u[step, i + 1])

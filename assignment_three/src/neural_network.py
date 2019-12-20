@@ -5,8 +5,7 @@ import torch.nn.functional as F
 class GenericNN(nn.Module):
 
     def __init__(self, num_input_features=10, num_output_features=10, num_hidden_layers=1, num_hidden_features=20,
-                 activation=F.relu,
-                 alpha=1, regularization='none'):
+                 activation=F.relu):
         super().__init__()
 
         self.input_layer = nn.Linear(num_input_features, num_hidden_features).double()

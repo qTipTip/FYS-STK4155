@@ -1,0 +1,389 @@
+\documentclass[article, a4paper, oneside]{memoir}
+\linespread{1.25}
+
+\setlength{\parskip}{1em}
+\setlength{\parindent}{0em}
+\usepackage[]{eulervm} 
+\usepackage[]{palatino} 
+\usepackage[]{commath} 
+\usepackage[]{microtype} 
+\usepackage[]{geometry} 
+\usepackage[]{minted} 
+\usemintedstyle{algol}
+
+\usepackage[]{amsmath, amssymb, amsthm, mathtools} 
+\usepackage[backend=biber, bibencoding=utf8, style=ieee]{biblatex} 
+\addbibresource{../../FYS-STK4155.bib}
+
+\usepackage[]{hyperref} 
+\usepackage[noabbrev, capitalize]{cleveref} 
+
+\newcommand{\cost}{\mathcal{C}}
+
+\title{\textsc{Solving the heat-equation using neural networks}}
+\author{Ivar Stangeby}
+
+\begin{document}
+	\maketitle	
+
+	\chapter{Introduction}
+
+	Partial differential equations have widespread use in the sciences, in
+	fields ranging from structural engineering to economics. The solution
+	of such equations in an accurate and precise way is of paramount
+	importance.
+
+	Several approaches to the solution of such equations exists, with the
+	more notable being \emph{finite difference} and \emph{finite
+	element}-methods. These two methods approach the problem at hand from
+	two different angles. In the finite difference schemes, the
+	differential operator is discretized, typically using schemes arising
+	from Taylor approximations to function. Finite element methods on the
+	other hand, instead of discretizing the operators, discretize the
+	function space for which the solution is sought.
+
+	In recent years, the use of artificial intelligence in the solution of
+	partial differential equations has started to gain some traction, see
+	for instance the DeepXDE-network \cite{luDeepXDEDeepLearning2019} and
+	the Deep Galerkin Method (DGM)
+	\cite{al-aradiSolvingNonlinearHighDimensional}.
+	
+	The neural network approach to solving PDEs is meshless, that is, it
+	does not rely on any underlying discretization of the domain as opposed
+	to finite difference and finite element methods. Furthermore, the
+	boundary conditions of the problem are encoded directly in the
+	cost-function used to optimize the neural network. In finite elements
+	the solution space is constructed in such a way as to automatically
+	satisfy the boundary conditions, and in finite differences the boundary
+	conditions must be imposed explicitly.
+
+	\chapter{Theory}
+
+	\section{The heat equation}	
+
+	We wish to solve the one-dimensional heat-equation. The problem reads
+	as follows. Find \( u \) such that
+	\begin{equation}
+		\label{eq:heat_eq}
+		\pd[2]{u(x, t)}{x} = \pd{u(x, t)}{t}
+	\end{equation}
+	subject to the boundary conditions \( u(0, t) = u(1, t) = 0 \) and the
+	initial condition
+	\begin{equation}
+		u(x, 0) = \sin(\pi x).
+	\end{equation}
+	We interpret the problem as that of finding the temperature gradient in
+	a rod of fixed length \( L = 1\).
+
+	\subsection{An analytical solution}
+	
+	In order to assess a-posteriori model performance, we need to know the
+	exact solution to our specific instance of the heat equation.
+
+	Following \cite{hancockLinearPartialDifferential} we derive an
+	analytical solution.  We assume separation of variables and see whether
+	this leads us to anything conclusive. We write
+	\begin{equation}
+		u(x, t) = X(x)T(t)
+	\end{equation}
+	where \( X \) carries the spatial dependence and \( T \) carries the
+	temporal dependence of the problem.  By taking the required partial
+	derivatives we obtain \(X''(x)T(t) = X(x)T'(t)\) from which we can
+	deduce that the ratios
+	\begin{equation}
+		\label{eq:ratio}
+		\frac{X''(x)}{X(x)} = \frac{T'(t)}{T(t)} = -\lambda
+	\end{equation}
+	are constant. From the boundary conditions, we have that
+	\begin{align}
+		u(0, t) = X(0)T(t) = 0, \\
+		u(1, t) = X(1)T(t) = 0.
+	\end{align}
+	By examination, we note that if \(T(t) = 0\) we obtain the trivial
+	solution \( u = 0\), which does not satisfy the boundary conditions.
+	Hence \( T \neq 0 \). Thus to satisfy the boundary conditions we must
+	have \( X(0) = X(1) = 0 \).
+	
+	The ratios in \cref{eq:ratio} gives rise to two ODEs, one in time and
+	one in space:
+	\begin{align}
+		X''(x) + \lambda X(x) &= 0, \label{eq:spatialODE} \\
+		T'(t) + \lambda T(t) &= 0 \label{eq:temp_ODE}.
+	\end{align}
+	We have obtained boundary conditions for the spatial ODE, hence we
+	start by solving that.
+	
+	As the constant \( \lambda \) is unknown, we have to consider three
+	cases. The cases \( \lambda < 0 \) and \( \lambda = 0 \) can be shown
+	to lead to \( u = 0\) which we discard. Thus we assume \( \lambda >
+	0\).  The solution to \cref{eq:spatialODE} is then
+	\begin{equation}
+		X(x) = A\cos(\sqrt{\lambda}x) + B\sin(\sqrt{\lambda}x).
+	\end{equation}
+	By imposing the boundary conditions we obtain \( A = 0 \) and \(
+	B\sin(\sqrt{\lambda}) = 0 \). Again, if we allow \( B = 0\), we obtain
+	\( u = 0\), so we discard this possibility. Hence \( \sin(\sqrt{\lambda}) = 0
+	\) from which we can deduce that
+	\begin{equation}
+		\lambda = \pi^2 n^2 
+	\end{equation}
+	for \( n \in \mathbb{N}^+\). This tells us that we have an infinite
+	number of solutions, one for each \( n \):
+	\begin{equation}
+		\label{eq:solution_space}
+		X_n(x) = B_n\sin(\pi n x)
+	\end{equation}
+	for some unknown constant \( B_n \).
+	
+
+	We now solve for the spatial component \( T \). For each possible
+	choice of \( \lambda \) we obtain
+	\begin{equation}
+		T_n'(t) +\pi^2 n^2T_n(t) = 0, 
+	\end{equation}
+	which has solutions
+	\begin{equation}
+		\label{eq:solution_temp}
+		T_n(t) = C_n e^{-n^2\pi^2t}.
+	\end{equation}
+	Combining \cref{eq:solution_space,eq:solution_temp} we get the family of solutions
+	\begin{equation}
+		u_n(x, t) = B_n C_n \sin(n\pi x)e^{-n^2\pi^2t}.
+	\end{equation}
+	In principle, we would have to consider the fourier coefficients of the
+	infinite sum of these solutions, however, by examining our initial
+	conditions, we see that \( u_1 \) is the desired solution, with \( B_1
+	C_1 = 1 \).
+
+	Thus, our closed form solution to the one-dimensional heat equation
+	with our prescribed boundary and initial conditions is:
+	\begin{equation}
+		u(x, t) = \sin(\pi x) e^{-\pi^2 t}.
+	\end{equation}
+	
+	\section{Finite differences}
+
+	We wish to solve the heat equation over the domain \( \Omega = [0, L]
+	\times [0, T]  \). Discretizing using \( N \) grid points in the
+	spatial direction and \( M \) grid points in the temporal direction, we
+	obtain step sizes \( \Delta x = L / (N - 1) \) and \( \Delta t = T / (M
+	- 1) \). Of the myriad of different finite difference schemes, we
+	choose the \emph{forward in time---centered in space} (FTCS).
+	
+	\subsection{Forward in time}
+	We start by discretizing the time-differential in \cref{eq:heat_eq} by
+	taking a first-order Taylor approximation of \( u \). We have
+	\begin{equation}
+		u(x, t + \Delta t) = \sum_{n = 0}^\infty \frac{\Delta t^n}{n!} \pd[n]{u(x, t)}{t} = u(x, t) + \Delta t \pd{u(x, t)}{t} + \mathcal{O}(\Delta t).
+	\end{equation}
+	We discard higher order terms and rearrange, yielding
+	\begin{equation}
+		\label{eq:forward_time}
+		\pd{u(x, t)}{t} \approx \frac{u(x, t+\Delta t) - u(x, t)}{\Delta t}, 
+	\end{equation}
+	with a truncation error that goes as \( \mathcal{O}(\Delta t) \).
+	
+	\subsection{Centered in space}	
+
+	The centered difference scheme involves two second-order
+	Taylor-aproximations in space:
+	\begin{align}
+		u(x + \Delta x, t) &= u(x, t) + \Delta x \dpd{u(x, t)}{x} +
+		\frac{\Delta x^2}{2} \dpd[2]{u(x, t)}{x} + \mathcal{O}(\Delta x^2) \\
+		u(x - \Delta x, t) &= u(x, t) - \Delta x \dpd{u(x, t)}{x} + \frac{\Delta x^2}{2} \dpd[2]{u(x, t)}{x} + \mathcal{O}(\Delta x^2).
+	\end{align}
+	Truncating, adding the equations to elimiate the first order
+	derivatives, and solving for the second derivative yields:
+	\begin{equation}
+		\label{eq:centered_space}
+		\dpd[2]{u(x, t)}{x} \approx \frac{u(x + \Delta x, t) - 2 u(x,
+		t) + u(x - \Delta x, t)}{\Delta x^2}
+	\end{equation}
+	with a truncation order of \( \mathcal{O}(\Delta x^2) \).
+
+	\subsection{The full scheme}	
+
+	Plugging \cref{eq:forward_time,eq:centered_space} into the heat
+	equation given in \cref{eq:heat_eq} yields
+	\begin{equation}
+		\frac{u(x, t + \Delta t) - u(x, t)}{\Delta t} = \frac{u(x +
+		\Delta x, t) - 2u(x, t) + u(x - \Delta x, t)}{\Delta x^2}.
+	\end{equation}
+	We are interesting in solving the equation forwards in time, so we
+	solve for the term \( u(x, t + \Delta t) \), yielding:
+	\begin{equation}
+		u(x, t + \Delta t) = \left( u(x + \Delta x, t) + u(x - \Delta x, t) \right) \frac{\Delta t}{\Delta x^2} + \left(1 - 2 \frac{\Delta t}{\Delta x^2}\right)u(x, t).
+	\end{equation}
+	Note that the solution at the next time step requires three spatial
+	solutions at the previous time-step. Hence, we are reliant on the
+	boundary conditions to keep the algorithm running.
+
+	While this scheme is easy to implement, it suffers from stability
+	issues, which can be combated by tweaking the ratio \( \Delta t /
+	\Delta x^2\). By ensuring that 
+	\begin{equation}
+		\Delta t \leq \frac{\Delta x^2}{2}, 
+	\end{equation}
+	the method behaves nicely.
+
+	\section{Neural network in the context of PDEs}
+	
+	Consider a neural network \( f:\Omega \to \mathbb{R}\) parameterized by \(\theta\).  The
+	question is now, how do we embed the partial differential equation in
+	the neural network? The answer lies in how we engineer our loss
+	function. 
+	
+	\subsection{Criterion}	
+
+	From \cref{eq:heat_eq} we can see that we wish to minimize
+	the following expression:
+	\begin{equation}
+		\label{eq:min_residual}
+		\min_{\theta} \left[\dpd[2]{f(x, t; \theta)}{x} - \dpd{f(x, t; \theta)}{t}\right]
+	\end{equation}
+	for \( x \in [0, L] \) and \( t > 0\). Thus, we can simply use the mean
+	squared error of the residuals in the right hand side of
+	\cref{eq:min_residual}. We therefore define our cost function \( \cost
+	\) as the mean squared residual error over all (assume \( n \))
+	data-points  in \(\Omega = [0, L] \times [0, T]\).
+	\begin{equation}
+		\cost(f) = \frac{1}{n} \sum_{i=1}^n \left(  \dpd[2]{f(x_i, t_i)}{x}
+		- \dpd{f(x_i, t_i)}{t}\right)^2
+	\end{equation}
+	
+	\subsection{Embedding boundary conditions}
+
+	Currently, we are not imposing any boundary conditions. Thus, by
+	naively running the network as is, we may find any function whose
+	second partial derivative in space is equal to its partial derivative
+	in time. There are several approaches to solving this problem. In
+	\cite{luDeepXDEDeepLearning2019} they train the network according to a
+	multi-task loss following the same trick as in \cref{eq:min_residual}
+	but for data-points lying on the boundary.
+	
+	We instead opt for the method of constructing a \emph{trial function}
+	that acts as a mediator between the neural network and the
+	loss-function which ensures that the network learns to satisfy the
+	boundary conditions.
+
+	Recall from our boundary and initial conditions that we require \( u(0,
+	t) = u(1, t) = 0 \) and \( u(x, 0) = \sin(\pi x) \). The function \( g
+	\) defined by
+	\begin{equation}
+		\label{eq:trial}
+		g(x, t; \theta) = (1 - t) \sin(\pi x) + x(1-x)t f(x, t; \theta),
+	\end{equation}
+	satisfies these conditions. It is therefore this function we pass into
+	our cost function \( \cost \).
+	
+	\subsection{Neural network architecture}
+
+	As our architecture we wanted to reuse the \textsc{GenericNN}
+	implemented in \cite{stangebyFYSSTK4155Project2019a}, which is a
+	feed-forward neural network with \textsc{Relu}-activations at each
+	hidden layer. However, after initial testing, using \textsc{Relu}
+	yielding wildly oscilating loss, hence we chose the more stable
+	\textsc{Sigmoid}-activation. This led to slower learning rates, due to
+	the saturation of gradients, but allowed the network to get a tighter
+	approximation.
+	
+	\section{Performance metrics}
+	
+	In order to evaluate our numerical approximations, whether they are
+	computed using finite-difference or they are trained neural networks,
+	we have several metrics we can consider. Calling our numerical
+	approximation to \( u \) for \( \tilde{u} \), we define our errors as
+	\begin{equation}
+		e_p = \| u - \tilde{u} \|_p,
+	\end{equation}
+	where \( \| \cdot \|_p \) denotes the \(p\)-norm for vectors.
+
+	\chapter{Implementation}
+	
+	The finite difference solver is implemented using a naive for-loop
+	approach in \texttt{numpy} and can be seen in \cref{lst:ftcs}. In order
+	to satisfy the stability criterion, we choose our desired \( \Delta x
+	\) and compute a corresponding \( \Delta t\) by
+	\begin{equation}
+		\Delta t = \Delta x^2 / 2.
+	\end{equation}
+
+	The neural network is implemented in \texttt{tensorflow}, which takes
+	care of the backpropagation of gradients through the network using the
+	\texttt{AutoGrad}-package. Ideally, we wanted to implement this in
+	\texttt{PyTorch}, however, taking element-wise gradients of the network
+	output with the respect to the network input, as is required to
+	evaluate \cref{eq:trial}, turned out to be hard to do in
+	\texttt{PyTorch}. Due to my lacking experience in \texttt{Tensorflow},
+	the implementation is a modified version of the one used to solve the
+	wave equation in \cite{heinDataAnalysisMachine}. This was implemented
+	in \texttt{Tensorflow V1}, thus we had to add the compatibility
+	modifications shown in \cref{lst:compatibility} in order for this to
+	run using the newer \texttt{Tensorflow V2} API.
+	
+	\begin{listing}
+		\centering	
+		\begin{minted}{python}
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()		
+		\end{minted}
+		\caption{Compatibility modification needed to use the
+		deprecated functionality of \texttt{Tensorflow} V1 in the V2
+	API.}
+		\label{lst:compatibility}
+	\end{listing}
+
+	
+	\begin{listing}
+		\centering
+		\begin{minted}{python}
+def ftcs(space_resolution, time_resolution, space_min_max=[0, 1],
+		time_max=1, boundary_conditions=[0, 0], initial_condition=None):
+    """
+    Solves the 1D-heat equation using a forward-in-time 
+    centered-in-space discretization scheme.
+
+    :param space_resolution: number of points in spatial direction
+    :param time_resolution: number of points in temporal direction
+    :param space_min_max: the spatial boundary values
+    :param time_max: the time to run the simulation for
+    :param boundary_conditions: the boundary conditions at the space_min_max-values
+    :param initial_conditions: the initial conditions at time = 0, callable.
+    """
+
+    if initial_condition is None:
+        initial_condition: lambda x: 0
+
+    dt = time_max / time_resolution
+    u0, dx = np.linspace(*space_min_max, num=space_resolution, retstep=True)
+    u = np.zeros((time_resolution, space_resolution))
+    u[:, [0, -1]] = boundary_conditions
+    u[0] = initial_condition(u0)
+
+    F = dt / dx ** 2
+    for step in tqdm.trange(time_resolution - 1):
+        for i in range(1, space_resolution - 1):
+            u[step + 1, i] = u[step, i] +\ 
+	    	F * (u[step, i - 1] - 2 * u[step, i] + u[step, i + 1])
+
+    return u			
+
+@np.vectorize
+def initial_condition(x):
+    return np.sin(np.pi * x)
+		\end{minted}
+		\caption{A \texttt{numpy}-based implementation of the
+			\emph{forward in time---centered in space} scheme. The
+			initial conditions are passed in as a callable, and the
+			function returns the solution at all time-steps in form
+			of a \texttt{time\_resolution} \(\times\)
+		\texttt{space\_resolution} matrix.}
+		\label{lst:ftcs}
+	\end{listing}
+
+	\chapter{Numerical experiments}
+	
+	
+\clearpage
+\printbibliography
+\end{document}
